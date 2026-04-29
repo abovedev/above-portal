@@ -1,0 +1,211 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  :root {
+    --scrollbar-width: 6px;
+    --scrollbar-track: #101114;
+    --scrollbar-thumb: #2A2E35;
+    --scrollbar-thumb-hover: #D7DCE2;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-text-primary font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: var(--scrollbar-width);
+    height: var(--scrollbar-width);
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-border rounded-card;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-200 hover:border-border-hover hover:shadow-card-hover;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap bg-accent hover:bg-accent-hover text-background font-semibold px-4 py-2 rounded-lg transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-text-secondary hover:text-text-primary hover:bg-surface-hover px-3 py-2 rounded-lg transition-all duration-150;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap border border-border text-text-secondary hover:text-text-primary hover:border-border-hover hover:bg-surface-hover px-3 py-2 rounded-lg transition-all duration-150;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap bg-priority-urgent/10 hover:bg-priority-urgent/20 text-priority-urgent border border-priority-urgent/30 font-medium px-4 py-2 rounded-lg transition-all duration-150;
+  }
+
+  .input {
+    @apply bg-surface-elevated border border-border rounded-lg px-3 py-2 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all duration-150 w-full;
+  }
+
+  .label {
+    @apply text-sm font-medium text-text-secondary mb-1 block;
+  }
+
+  .skeleton {
+    @apply rounded-lg bg-surface-elevated;
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(238, 241, 244, 0.04) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton 1.5s ease-in-out infinite;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-low {
+    @apply badge bg-priority-low/15 text-priority-low;
+  }
+
+  .badge-medium {
+    @apply badge bg-priority-medium/15 text-priority-medium;
+  }
+
+  .badge-high {
+    @apply badge bg-priority-high/15 text-priority-high;
+  }
+
+  .badge-urgent {
+    @apply badge bg-priority-urgent/15 text-priority-urgent;
+  }
+
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-background;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-accent-gradient bg-clip-text text-transparent;
+  }
+
+  .border-glow {
+    box-shadow: 0 0 0 1px rgba(215, 220, 226, 0.42), 0 0 20px rgba(215, 220, 226, 0.16);
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* TipTap prose styles */
+.ProseMirror {
+  outline: none;
+  min-height: 200px;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  @apply text-text-muted;
+  float: left;
+  pointer-events: none;
+  height: 0;
+}
+
+.ProseMirror h1 {
+  @apply text-3xl font-heading font-bold text-text-primary mb-4 mt-6;
+}
+
+.ProseMirror h2 {
+  @apply text-2xl font-heading font-semibold text-text-primary mb-3 mt-5;
+}
+
+.ProseMirror h3 {
+  @apply text-xl font-heading font-semibold text-text-primary mb-2 mt-4;
+}
+
+.ProseMirror p {
+  @apply text-text-secondary mb-3 leading-relaxed;
+}
+
+.ProseMirror ul {
+  @apply list-disc pl-6 mb-3 space-y-1;
+}
+
+.ProseMirror ol {
+  @apply list-decimal pl-6 mb-3 space-y-1;
+}
+
+.ProseMirror li {
+  @apply text-text-secondary;
+}
+
+.ProseMirror blockquote {
+  @apply border-l-4 border-accent pl-4 italic text-text-secondary my-4;
+}
+
+.ProseMirror hr {
+  @apply border-border my-6;
+}
+
+.ProseMirror code {
+  @apply bg-surface-elevated px-1.5 py-0.5 rounded text-sm font-mono text-accent;
+}
+
+.ProseMirror pre {
+  @apply bg-surface-elevated p-4 rounded-lg my-4 overflow-x-auto;
+}
+
+.ProseMirror pre code {
+  @apply bg-transparent p-0 text-text-primary;
+}
+
+/* Page content render */
+.page-content h1 { @apply text-3xl font-heading font-bold text-text-primary mb-4 mt-6; }
+.page-content h2 { @apply text-2xl font-heading font-semibold text-text-primary mb-3 mt-5; }
+.page-content h3 { @apply text-xl font-heading font-semibold text-text-primary mb-2 mt-4; }
+.page-content p { @apply text-text-secondary mb-3 leading-relaxed; }
+.page-content ul { @apply list-disc pl-6 mb-3 space-y-1; }
+.page-content ol { @apply list-decimal pl-6 mb-3 space-y-1; }
+.page-content li { @apply text-text-secondary; }
+.page-content blockquote { @apply border-l-4 border-accent pl-4 italic text-text-secondary my-4; }
+.page-content hr { @apply border-border my-6; }

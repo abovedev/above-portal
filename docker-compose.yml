@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: portal_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: portal_user
+      POSTGRES_PASSWORD: portal_pass
+      POSTGRES_DB: portal_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: portal_server
+    restart: unless-stopped
+    env_file: ./server/.env
+    ports:
+      - '4000:4000'
+    depends_on:
+      - postgres
+    volumes:
+      - ./server/uploads:/app/uploads
+
+volumes:
+  postgres_data:

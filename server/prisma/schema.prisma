@@ -1,0 +1,230 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum PageType {
+  GLOBAL
+  PERSONAL
+}
+
+enum SectionType {
+  TEXT
+  IMAGE
+  VIDEO
+  EMBED
+  DIVIDER
+}
+
+enum WidgetType {
+  CLOCK
+  WEATHER
+  ANNOUNCEMENTS
+  QUICK_LINKS
+  TASKS
+  CALENDAR
+  NOTES
+  STATS
+  SYSTEM_STATS
+  RECENT_ACTIVITY
+  USER_GROWTH
+  PAGE_VIEWS
+  GMAIL
+  GCHAT
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  PAGE_ASSIGNED
+  ANNOUNCEMENT
+  SYSTEM
+  TASK_REMINDER
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String
+  firstName     String
+  lastName      String
+  avatar        String?
+  role          Role     @default(USER)
+  department    String?
+  position      String?
+  isActive      Boolean  @default(true)
+  googleAccessToken  String?
+  googleRefreshToken String?
+  googleEmail        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+  asanaConnection AsanaConnection?
+  widgets       Widget[]
+  tasks         Task[]
+  quickLinks    QuickLink[]
+  notifications Notification[]
+  pageAssignments PageAssignment[] @relation("AssignedToUser")
+  assignedBy    PageAssignment[]   @relation("AssignedByAdmin")
+  pagesCreated  Page[]
+  announcements Announcement[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model AsanaConnection {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asanaUserGid   String
+  asanaUserName  String?
+  asanaUserEmail String?
+  accessToken    String
+  refreshToken   String
+  expiresAt      DateTime
+  workspaceGid   String?
+  workspaceName  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Page {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  content     Json?
+  coverImage  String?
+  icon        String?
+  description String?
+  type        PageType  @default(GLOBAL)
+  isPublished Boolean   @default(false)
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  sections    PageSection[]
+  assignments PageAssignment[]
+}
+
+model PageSection {
+  id      String      @id @default(cuid())
+  pageId  String
+  page    Page        @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  title   String?
+  content Json?
+  order   Int
+  type    SectionType @default(TEXT)
+}
+
+model PageAssignment {
+  id           String   @id @default(cuid())
+  pageId       String
+  page         Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?    @relation("AssignedToUser", fields: [userId], references: [id], onDelete: Cascade)
+  assignedById String
+  assignedBy   User     @relation("AssignedByAdmin", fields: [assignedById], references: [id])
+  assignedAt   DateTime @default(now())
+
+  @@unique([pageId, userId])
+}
+
+model Widget {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       WidgetType
+  title      String
+  settings   Json       @default("{}")
+  isVisible  Boolean    @default(true)
+  positionX  Int        @default(0)
+  positionY  Int        @default(0)
+  width      Int        @default(4)
+  height     Int        @default(2)
+  order      Int        @default(0)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  body        String
+  priority    Priority  @default(LOW)
+  isPinned    Boolean   @default(false)
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  isCompleted Boolean   @default(false)
+  dueDate     DateTime?
+  priority    Priority  @default(LOW)
+  asanaTaskGid String?
+  asanaPermalink String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model QuickLink {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String
+  url       String
+  icon      String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      NotificationType @default(SYSTEM)
+  isRead    Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now())
+}
+
+model CompanySettings {
+  id           String   @id @default(cuid())
+  companyName  String   @default("Above Portal")
+  logoUrl      String?
+  theme        String   @default("dark")
+  accentColor  String   @default("#D7DCE2")
+  defaultWidgets Json   @default("[]")
+  updatedAt    DateTime @updatedAt
+}
