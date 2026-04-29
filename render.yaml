@@ -27,7 +27,7 @@ services:
       - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: CLIENT_URL
-        value: https://above-portal.onrender.com
+        sync: false
       - key: UPLOAD_DIR
         value: /opt/render/project/src/server/uploads
       - key: GOOGLE_CLIENT_ID
