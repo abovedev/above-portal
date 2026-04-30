@@ -22,6 +22,7 @@ import googleRoutes from './routes/google';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 4000;
 const uploadsDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
 
