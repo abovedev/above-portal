@@ -1,10 +1,10 @@
 {
-  "buildCommand": "cd client && npm install && npm run build",
+  "buildCommand": "npx prisma generate --schema=server/prisma/schema.prisma && npm install --prefix client && npm run build --prefix client",
   "outputDirectory": "client/dist",
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://above-portal-api-production.up.railway.app/api/$1"
+      "destination": "/api/index"
     },
     {
       "source": "/(.*)",
