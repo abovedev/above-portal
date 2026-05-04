@@ -3,10 +3,11 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 
-const uploadsDir = process.env.UPLOAD_DIR || 'uploads';
+const uploadsDir = process.env.UPLOAD_DIR ||
+  (process.env.NODE_ENV === 'production' ? '/tmp/uploads' : 'uploads');
 
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+  try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch { /* read-only fs in serverless */ }
 }
 
 const storage = multer.diskStorage({

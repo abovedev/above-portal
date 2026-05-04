@@ -23,7 +23,8 @@ import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
 app.set('trust proxy', 1);
-const uploadsDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+const uploadsDir = process.env.UPLOAD_DIR ||
+  (process.env.NODE_ENV === 'production' ? '/tmp/uploads' : path.join(process.cwd(), 'uploads'));
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
