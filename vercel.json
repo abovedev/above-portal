@@ -1,5 +1,6 @@
 {
-  "buildCommand": "npx prisma generate --schema=server/prisma/schema.prisma && npm install --prefix client && npm run build --prefix client",
+  "installCommand": "npm install && npm install --prefix client",
+  "buildCommand": "npx prisma generate --schema=server/prisma/schema.prisma && npm run build --prefix client",
   "outputDirectory": "client/dist",
   "rewrites": [
     {
