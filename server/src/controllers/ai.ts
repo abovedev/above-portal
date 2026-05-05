@@ -211,8 +211,8 @@ export async function chat(req: AuthRequest, res: Response) {
       });
 
       if (response.stop_reason === 'end_turn') {
-        const text = response.content.find((b) => b.type === 'text');
-        return sendSuccess(res, { reply: text?.text ?? '' });
+        const text = response.content.find((b: Anthropic.ContentBlock) => b.type === 'text');
+        return sendSuccess(res, { reply: text && text.type === 'text' ? text.text : '' });
       }
 
       if (response.stop_reason === 'tool_use') {
@@ -268,8 +268,8 @@ export async function chat(req: AuthRequest, res: Response) {
       }
 
       // Any other stop reason — return whatever text we have
-      const text = response.content.find((b) => b.type === 'text');
-      return sendSuccess(res, { reply: text?.text ?? '' });
+      const text = response.content.find((b: Anthropic.ContentBlock) => b.type === 'text');
+      return sendSuccess(res, { reply: text && text.type === 'text' ? text.text : '' });
     }
 
     return sendError(res, 'Too many tool iterations', 500);
