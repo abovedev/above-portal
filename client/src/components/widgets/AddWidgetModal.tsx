@@ -1,5 +1,5 @@
 import Modal from '@/components/ui/Modal';
-import { Clock, Megaphone, CheckSquare, Link2, StickyNote, BarChart2, CalendarDays, Activity, Mail, MessageSquare } from 'lucide-react';
+import { Clock, Megaphone, CheckSquare, Link2, StickyNote, BarChart2, CalendarDays, Activity, Mail, MessageSquare, Sparkles } from 'lucide-react';
 import type { WidgetType } from '@/types';
 
 const WIDGET_OPTIONS: { type: WidgetType; label: string; desc: string; icon: React.ElementType; adminOnly?: boolean }[] = [
@@ -12,6 +12,7 @@ const WIDGET_OPTIONS: { type: WidgetType; label: string; desc: string; icon: Rea
   { type: 'CALENDAR', label: 'Google Calendar', desc: 'Upcoming events from Google Calendar', icon: CalendarDays },
   { type: 'GMAIL', label: 'Gmail', desc: 'Recent inbox threads from Gmail', icon: Mail },
   { type: 'GCHAT', label: 'Google Chat', desc: 'Quick launcher for Google Chat', icon: MessageSquare },
+  { type: 'AI_CHAT', label: 'AD Brain', desc: "Above Digital's internal AI assistant", icon: Sparkles },
   { type: 'SYSTEM_STATS', label: 'System Stats', desc: 'Admin-level system metrics', icon: Activity, adminOnly: true },
 ];
 

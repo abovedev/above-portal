@@ -41,6 +41,7 @@ enum WidgetType {
   PAGE_VIEWS
   GMAIL
   GCHAT
+  AI_CHAT
 }
 
 enum Priority {

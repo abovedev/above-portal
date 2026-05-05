@@ -17,7 +17,8 @@ export type WidgetType =
   | 'USER_GROWTH'
   | 'PAGE_VIEWS'
   | 'GMAIL'
-  | 'GCHAT';
+  | 'GCHAT'
+  | 'AI_CHAT';
 
 export interface User {
   id: string;

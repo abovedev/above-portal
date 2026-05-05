@@ -9,6 +9,7 @@ import CalendarWidget from './CalendarWidget';
 import AdminStatsWidget from './AdminStatsWidget';
 import GmailWidget from './GmailWidget';
 import GChatWidget from './GChatWidget';
+import AIChatWidget from './AIChatWidget';
 
 interface WidgetRendererProps {
   widget: Widget;
@@ -26,6 +27,7 @@ export default function WidgetRenderer({ widget }: WidgetRendererProps) {
     case 'SYSTEM_STATS': return <AdminStatsWidget />;
     case 'GMAIL': return <GmailWidget />;
     case 'GCHAT': return <GChatWidget />;
+    case 'AI_CHAT': return <AIChatWidget />;
     case 'RECENT_ACTIVITY': return (
       <div className="p-4 text-text-muted text-sm flex items-center justify-center h-full">
         Recent Activity

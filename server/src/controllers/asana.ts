@@ -343,3 +343,60 @@ export async function completeTask(taskGid: string, userId: string) {
     body: JSON.stringify({ data: { completed: true } }),
   });
 }
+
+export async function aiGetAsanaTasks(userId: string, query?: string): Promise<string> {
+  let connection;
+  try {
+    connection = await refreshAccessToken(userId);
+  } catch {
+    return 'Asana token refresh failed. Ask the user to reconnect Asana from the Tasks widget.';
+  }
+
+  if (!connection) return 'Asana is not connected. Ask the user to connect Asana from the Tasks widget on the dashboard.';
+  if (!connection.workspaceGid) return 'No Asana workspace found for this account.';
+
+  const fields = 'gid,name,completed,permalink_url,due_on';
+
+  try {
+    let tasks: AsanaTask[];
+
+    if (query) {
+      const path = `/workspaces/${connection.workspaceGid}/tasks/search?${new URLSearchParams({
+        text: query,
+        'assignee.any': 'me',
+        completed: 'false',
+        limit: '15',
+        opt_fields: fields,
+      })}`;
+      const result = await asanaRequest<{ data: AsanaTask[] }>(connection.accessToken, path);
+      tasks = result.data;
+    } else {
+      const path = `/tasks?${new URLSearchParams({
+        workspace: connection.workspaceGid,
+        assignee: 'me',
+        completed_since: 'now',
+        limit: '20',
+        opt_fields: fields,
+      })}`;
+      const result = await asanaRequest<{ data: AsanaTask[] }>(connection.accessToken, path);
+      tasks = result.data.filter((t) => !t.completed);
+    }
+
+    if (tasks.length === 0) {
+      return query ? `No Asana tasks found matching "${query}".` : 'No open Asana tasks assigned to you.';
+    }
+
+    return JSON.stringify(
+      tasks.map((t) => ({
+        name: t.name,
+        dueOn: t.due_on || null,
+        link: t.permalink_url,
+        gid: t.gid,
+      }))
+    );
+  } catch (err) {
+    const status = (err as Error & { status?: number }).status;
+    if (status === 402) return 'Asana task search requires a premium Asana workspace.';
+    return 'Failed to fetch Asana tasks.';
+  }
+}

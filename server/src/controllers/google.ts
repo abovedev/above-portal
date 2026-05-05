@@ -22,6 +22,8 @@ const SCOPES = [
   'https://www.googleapis.com/auth/chat.memberships.readonly',
   'https://www.googleapis.com/auth/contacts.other.readonly',
   'https://www.googleapis.com/auth/directory.readonly',
+  'https://www.googleapis.com/auth/drive.readonly',
+  'https://www.googleapis.com/auth/documents.readonly',
   'email',
   'profile',
 ];
@@ -494,4 +496,208 @@ export async function disconnectGoogle(req: AuthRequest, res: Response) {
     },
   });
   return sendSuccess(res, null, 'Google disconnected');
+}
+
+// ─── AI Tool Utilities ─────────────────────────────────────────────────────────────────────────────
+
+export async function aiSearchDrive(userId: string, query: string): Promise<string> {
+  const auth = await getAuthedClient(userId);
+  if (!auth) return 'Google Drive is not connected. Ask the user to connect their Google account from any Google widget on the dashboard.';
+
+  try {
+    const drive = google.drive({ version: 'v3', auth });
+    const safeQuery = query.replace(/'/g, "\\'");
+    const res = await drive.files.list({
+      q: `(fullText contains '${safeQuery}' or name contains '${safeQuery}') and trashed = false`,
+      fields: 'files(id,name,mimeType,modifiedTime,webViewLink)',
+      pageSize: 10,
+      orderBy: 'modifiedTime desc',
+    });
+
+    const files = res.data.files ?? [];
+    if (files.length === 0) return `No files found in Google Drive matching "${query}".`;
+
+    return JSON.stringify(
+      files.map((f) => ({
+        id: f.id,
+        name: f.name,
+        type: f.mimeType?.includes('document') ? 'Google Doc'
+          : f.mimeType?.includes('spreadsheet') ? 'Google Sheet'
+          : f.mimeType?.includes('presentation') ? 'Google Slides'
+          : f.mimeType?.split('/').pop() ?? 'File',
+        modified: f.modifiedTime,
+        link: f.webViewLink,
+      }))
+    );
+  } catch (err) {
+    const { code } = getGoogleErrorDetails(err);
+    if (code === 'GOOGLE_RECONNECT_REQUIRED') return 'Google Drive access has expired. Ask the user to reconnect their Google account from any Google widget on the dashboard.';
+    return 'Failed to search Google Drive.';
+  }
+}
+
+export async function aiGetDocument(userId: string, fileId: string): Promise<string> {
+  const auth = await getAuthedClient(userId);
+  if (!auth) return 'Google Docs is not connected.';
+
+  try {
+    const docs = google.docs({ version: 'v1', auth });
+    const res = await docs.documents.get({ documentId: fileId });
+
+    let text = '';
+    for (const element of res.data.body?.content ?? []) {
+      if (element.paragraph?.elements) {
+        for (const pe of element.paragraph.elements) {
+          text += pe.textRun?.content ?? '';
+        }
+      } else if (element.table) {
+        for (const row of element.table.tableRows ?? []) {
+          for (const cell of row.tableCells ?? []) {
+            for (const cellEl of cell.content ?? []) {
+              for (const pe of cellEl.paragraph?.elements ?? []) {
+                text += pe.textRun?.content ?? '';
+              }
+            }
+          }
+          text += '\n';
+        }
+      }
+    }
+
+    const trimmed = text.trim().slice(0, 12000);
+    return JSON.stringify({ title: res.data.title, content: trimmed });
+  } catch (err) {
+    const { code } = getGoogleErrorDetails(err);
+    if (code === 'GOOGLE_RECONNECT_REQUIRED') return 'Google Docs access has expired. Ask the user to reconnect their Google account.';
+    return 'Failed to read the document. It may not be a Google Doc, or you may not have permission to access it.';
+  }
+}
+
+export async function aiListCalendarEvents(userId: string, daysAhead: number = 7): Promise<string> {
+  const auth = await getAuthedClient(userId);
+  if (!auth) return 'Google Calendar is not connected. Ask the user to connect their Google account from the Calendar widget on the dashboard.';
+
+  try {
+    const calendar = google.calendar({ version: 'v3', auth });
+    const now = new Date();
+    const end = new Date(now.getTime() + Math.min(daysAhead, 30) * 24 * 60 * 60 * 1000);
+
+    const eventsRes = await calendar.events.list({
+      calendarId: 'primary',
+      timeMin: now.toISOString(),
+      timeMax: end.toISOString(),
+      maxResults: 15,
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+
+    const events = (eventsRes.data.items ?? []).map((e) => ({
+      title: e.summary ?? '(no title)',
+      start: e.start?.dateTime ?? e.start?.date,
+      end: e.end?.dateTime ?? e.end?.date,
+      location: e.location ?? null,
+      allDay: !e.start?.dateTime,
+      link: e.htmlLink,
+    }));
+
+    if (events.length === 0) return `No calendar events found in the next ${daysAhead} days.`;
+    return JSON.stringify(events);
+  } catch (err) {
+    const { code } = getGoogleErrorDetails(err);
+    if (code === 'GOOGLE_RECONNECT_REQUIRED') return 'Google Calendar access has expired. Ask the user to reconnect their Google account.';
+    return 'Failed to fetch calendar events.';
+  }
+}
+
+export async function aiSearchGmail(userId: string, query: string): Promise<string> {
+  const auth = await getAuthedClient(userId);
+  if (!auth) return 'Gmail is not connected. Ask the user to connect their Google account from the Gmail widget on the dashboard.';
+
+  try {
+    const gmail = google.gmail({ version: 'v1', auth });
+    const listRes = await gmail.users.threads.list({ userId: 'me', q: query, maxResults: 10 });
+    const threadItems = listRes.data.threads ?? [];
+    if (threadItems.length === 0) return `No Gmail threads found matching "${query}".`;
+
+    const threads = await Promise.all(
+      threadItems.map(async (t) => {
+        const thread = await gmail.users.threads.get({
+          userId: 'me',
+          id: t.id!,
+          format: 'metadata',
+          metadataHeaders: ['From', 'Subject', 'Date'],
+        });
+        const messages = thread.data.messages ?? [];
+        const lastMsg = messages[messages.length - 1];
+        const headers = lastMsg?.payload?.headers ?? [];
+        const getHeader = (name: string) =>
+          headers.find((h) => h.name?.toLowerCase() === name.toLowerCase())?.value ?? '';
+        const from = parseFrom(getHeader('From'));
+        return {
+          id: t.id,
+          subject: getHeader('Subject') || '(no subject)',
+          from,
+          date: getHeader('Date'),
+          snippet: lastMsg?.snippet ?? '',
+          isUnread: messages.some((m) => m.labelIds?.includes('UNREAD')),
+          messageCount: messages.length,
+        };
+      })
+    );
+
+    return JSON.stringify(threads);
+  } catch (err) {
+    const { code } = getGoogleErrorDetails(err);
+    if (code === 'GOOGLE_RECONNECT_REQUIRED') return 'Gmail access has expired. Ask the user to reconnect their Google account.';
+    return 'Failed to search Gmail.';
+  }
+}
+
+export async function aiListChatSpaces(userId: string): Promise<string> {
+  const auth = await getAuthedClient(userId);
+  if (!auth) return 'Google Chat is not connected. Ask the user to connect their Google account from the Google Chat widget.';
+
+  try {
+    const chat = google.chat({ version: 'v1', auth });
+    const spacesRes = await chat.spaces.list({ pageSize: 20 });
+    const spaces = (spacesRes.data.spaces ?? []).map((s) => ({
+      name: s.name,
+      displayName: s.displayName ?? s.name,
+      type: s.spaceType ?? s.type,
+    }));
+    if (spaces.length === 0) return 'No Google Chat spaces found.';
+    return JSON.stringify(spaces);
+  } catch (err) {
+    const { code } = getGoogleErrorDetails(err);
+    if (code === 'GOOGLE_RECONNECT_REQUIRED') return 'Google Chat access has expired. Ask the user to reconnect.';
+    if (code === 'GOOGLE_CHAT_APP_NOT_CONFIGURED') return 'Google Chat requires Google Workspace.';
+    return 'Failed to list Google Chat spaces.';
+  }
+}
+
+export async function aiGetChatMessages(userId: string, spaceName: string): Promise<string> {
+  const auth = await getAuthedClient(userId);
+  if (!auth) return 'Google Chat is not connected.';
+
+  try {
+    const chat = google.chat({ version: 'v1', auth });
+    const messagesRes = await chat.spaces.messages.list({
+      parent: spaceName,
+      pageSize: 25,
+      orderBy: 'createTime desc',
+    });
+
+    const messages = (messagesRes.data.messages ?? []).reverse().map((m) => ({
+      sender: m.sender?.displayName ?? m.sender?.name ?? 'Unknown',
+      text: m.text ?? '',
+      createTime: m.createTime,
+    }));
+
+    if (messages.length === 0) return 'No messages found in this space.';
+    return JSON.stringify(messages);
+  } catch (err) {
+    const { code } = getGoogleErrorDetails(err);
+    if (code === 'GOOGLE_RECONNECT_REQUIRED') return 'Google Chat access has expired.';
+    return 'Failed to fetch messages from this Chat space.';
+  }
 }

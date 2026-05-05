@@ -45,6 +45,7 @@ const WIDGET_LABELS: Record<WidgetType, string> = {
   PAGE_VIEWS: 'Page Views',
   GMAIL: 'Gmail',
   GCHAT: 'Google Chat',
+  AI_CHAT: 'AI Assistant',
 };
 
 export default function DashboardPage() {

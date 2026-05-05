@@ -14,7 +14,7 @@ export async function getWidgets(req: AuthRequest, res: Response) {
 }
 
 const widgetSchema = z.object({
-  type: z.enum(['CLOCK','WEATHER','ANNOUNCEMENTS','QUICK_LINKS','TASKS','CALENDAR','NOTES','STATS','SYSTEM_STATS','RECENT_ACTIVITY','USER_GROWTH','PAGE_VIEWS','GMAIL','GCHAT']),
+  type: z.enum(['CLOCK','WEATHER','ANNOUNCEMENTS','QUICK_LINKS','TASKS','CALENDAR','NOTES','STATS','SYSTEM_STATS','RECENT_ACTIVITY','USER_GROWTH','PAGE_VIEWS','GMAIL','GCHAT','AI_CHAT']),
   title: z.string().min(1),
   settings: z.record(z.unknown()).default({}),
   isVisible: z.boolean().default(true),

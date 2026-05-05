@@ -19,6 +19,7 @@ import quickLinkRoutes from './routes/quickLinks';
 import settingsRoutes from './routes/settings';
 import asanaRoutes from './routes/asana';
 import googleRoutes from './routes/google';
+import aiRoutes from './routes/ai';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -61,6 +62,7 @@ app.use('/api/quick-links', quickLinkRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/asana', asanaRoutes);
 app.use('/api/google', googleRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });
