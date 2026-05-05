@@ -90,6 +90,7 @@ export default function ProfilePage() {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
+            data-tour="profile-avatar"
             className="card p-6"
           >
             <h2 className="font-heading font-semibold text-text-primary mb-4 flex items-center gap-2">
@@ -119,6 +120,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
+            data-tour="profile-form"
             className="card p-6"
           >
             <h2 className="font-heading font-semibold text-text-primary mb-4">Personal Information</h2>
@@ -175,6 +177,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+            data-tour="profile-password"
             className="card p-6"
           >
             <h2 className="font-heading font-semibold text-text-primary mb-4 flex items-center gap-2">

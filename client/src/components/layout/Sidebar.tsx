@@ -65,24 +65,32 @@ export default function Sidebar() {
             to={to}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 px-2.5 py-2 rounded-lg transition-all duration-150 group',
+                'relative flex items-center gap-3 px-2.5 py-2 rounded-lg group',
                 sidebarCollapsed ? 'justify-center' : '',
-                isActive
-                  ? 'bg-accent-muted text-accent border border-accent/20'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
+                isActive ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
               )
             }
           >
             {({ isActive }) => (
               <>
-                <Icon className={cn('w-4.5 h-4.5 flex-shrink-0', isActive ? 'text-accent' : '')} />
+                {isActive && (
+                  <motion.div
+                    layoutId="nav-pill"
+                    className="absolute inset-0 bg-accent-muted border border-accent/20 rounded-lg"
+                    transition={{ type: 'spring', stiffness: 400, damping: 36 }}
+                  />
+                )}
+                {!isActive && (
+                  <div className="absolute inset-0 rounded-lg group-hover:bg-surface-hover transition-colors duration-150" />
+                )}
+                <Icon className={cn('relative w-4.5 h-4.5 flex-shrink-0 z-10', isActive ? 'text-accent' : '')} />
                 <AnimatePresence>
                   {!sidebarCollapsed && (
                     <motion.span
                       initial={{ opacity: 0, width: 0 }}
                       animate={{ opacity: 1, width: 'auto' }}
                       exit={{ opacity: 0, width: 0 }}
-                      className="text-sm font-medium whitespace-nowrap overflow-hidden"
+                      className="relative z-10 text-sm font-medium whitespace-nowrap overflow-hidden"
                     >
                       {label}
                     </motion.span>

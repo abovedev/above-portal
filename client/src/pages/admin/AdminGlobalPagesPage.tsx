@@ -67,7 +67,7 @@ export default function AdminGlobalPagesPage() {
       <Topbar
         title="Global Pages"
         actions={
-          <button onClick={() => navigate('/admin/pages/global/new')} className="btn-primary text-sm flex items-center gap-1.5">
+          <button data-tour="new-page" onClick={() => navigate('/admin/pages/global/new')} className="btn-primary text-sm flex items-center gap-1.5">
             <Plus className="w-4 h-4" /> Create Page
           </button>
         }
@@ -90,7 +90,7 @@ export default function AdminGlobalPagesPage() {
             }
           />
         ) : (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card overflow-hidden">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} data-tour="page-list" className="card overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">

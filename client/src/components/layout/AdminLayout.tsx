@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AdminSidebar from './AdminSidebar';
+import HelpPanel from './HelpPanel';
 
 export default function AdminLayout() {
   return (
@@ -16,6 +17,7 @@ export default function AdminLayout() {
           <Outlet />
         </div>
       </motion.main>
+      <HelpPanel />
     </div>
   );
 }

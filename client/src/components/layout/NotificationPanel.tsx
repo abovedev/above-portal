@@ -83,6 +83,7 @@ export default function NotificationPanel() {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
+        data-tour="notifications"
         className="relative btn-ghost p-2 rounded-lg"
         aria-label="Notifications"
       >

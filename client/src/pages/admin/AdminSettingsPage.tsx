@@ -66,7 +66,7 @@ export default function AdminSettingsPage() {
         <div className="max-w-2xl mx-auto space-y-6">
 
           {/* Company branding */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="card p-6">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} data-tour="settings-form" className="card p-6">
             <h2 className="font-heading font-semibold text-text-primary mb-4 flex items-center gap-2">
               <Settings className="w-4 h-4 text-accent" /> Company Branding
             </h2>

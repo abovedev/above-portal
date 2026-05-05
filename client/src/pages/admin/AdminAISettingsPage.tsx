@@ -120,7 +120,7 @@ export default function AdminAISettingsPage() {
             onSubmit={handleSave}
             className="card p-5 sm:p-6 space-y-6"
           >
-            <div className="flex items-center justify-between gap-4 border-b border-border pb-5">
+            <div data-tour="ai-toggle" className="flex items-center justify-between gap-4 border-b border-border pb-5">
               <div>
                 <label className="label mb-1">Enable AI Assistant</label>
                 <p className="text-xs text-text-muted">Turn the assistant on or off for users.</p>
@@ -139,7 +139,7 @@ export default function AdminAISettingsPage() {
               </button>
             </div>
 
-            <div>
+            <div data-tour="ai-tone">
               <label className="label">Email Writing Tone</label>
               <select
                 className="input"
@@ -153,7 +153,7 @@ export default function AdminAISettingsPage() {
               <p className="text-xs text-text-muted mt-1">Choose the default tone used when the assistant writes emails.</p>
             </div>
 
-            <div>
+            <div data-tour="ai-instructions">
               <label className="label">Default Email Writing Instructions</label>
               <textarea
                 className="input min-h-28 resize-y"

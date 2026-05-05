@@ -37,7 +37,7 @@ export default function CompanyPagesPage() {
 
       <div className="flex-1 overflow-auto p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="relative flex-1 max-w-sm">
+          <div data-tour="page-search" className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
             <input
               value={search}
@@ -73,7 +73,7 @@ export default function CompanyPagesPage() {
             description={search ? `No results for "${search}"` : 'No company pages published yet'}
           />
         ) : view === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div data-tour="page-list" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {pages.map((page, i) => (
               <motion.div
                 key={page.id}

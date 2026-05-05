@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import Avatar from '@/components/ui/Avatar';
 import NotificationPanel from './NotificationPanel';
+import { HelpTrigger } from './HelpPanel';
 import api from '@/lib/api';
 
 interface TopbarProps {
@@ -62,6 +63,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
       {actions && <div className="flex items-center gap-2 whitespace-nowrap">{actions}</div>}
 
       <div className="ml-auto flex items-center gap-2">
+        <HelpTrigger />
         <NotificationPanel />
 
         {/* User menu */}

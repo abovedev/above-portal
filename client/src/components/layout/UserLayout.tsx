@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Sidebar from './Sidebar';
+import HelpPanel from './HelpPanel';
 
 export default function UserLayout() {
   return (
@@ -16,6 +17,7 @@ export default function UserLayout() {
           <Outlet />
         </div>
       </motion.main>
+      <HelpPanel />
     </div>
   );
 }

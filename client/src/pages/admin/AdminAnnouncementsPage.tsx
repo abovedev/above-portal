@@ -106,7 +106,7 @@ export default function AdminAnnouncementsPage() {
       <Topbar
         title="Announcements"
         actions={
-          <button onClick={openCreate} className="btn-primary text-sm flex items-center gap-1.5">
+          <button data-tour="new-announcement" onClick={openCreate} className="btn-primary text-sm flex items-center gap-1.5">
             <Plus className="w-4 h-4" /> New Announcement
           </button>
         }
@@ -125,7 +125,7 @@ export default function AdminAnnouncementsPage() {
             action={<button onClick={openCreate} className="btn-primary text-sm"><Plus className="w-4 h-4" /> Create First Announcement</button>}
           />
         ) : (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} data-tour="announcement-list" className="space-y-3">
             {announcements.map((a) => (
               <div
                 key={a.id}

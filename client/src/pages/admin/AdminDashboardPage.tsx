@@ -138,7 +138,7 @@ export default function AdminDashboardPage() {
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={display.map((w) => w.id)} strategy={rectSortingStrategy}>
-              <div className="grid grid-cols-12 gap-4 auto-rows-[120px]">
+              <div data-tour="admin-stats" className="grid grid-cols-12 gap-4 auto-rows-[120px]">
                 <AnimatePresence>
                   {display.map((widget) => (
                     <WidgetContainer key={widget.id} widget={widget} editMode={boardEditMode} onRemove={boardEditMode ? handleRemoveWidget : undefined}>

@@ -213,10 +213,10 @@ export default function DashboardPage() {
             </>
           ) : (
             <>
-              <button onClick={() => setAddOpen(true)} className="btn-ghost text-sm flex items-center gap-1.5">
+              <button data-tour="add-widget" onClick={() => setAddOpen(true)} className="btn-ghost text-sm flex items-center gap-1.5">
                 <Plus className="w-4 h-4" /> Add Widget
               </button>
-              <button onClick={handleEnterEdit} className="btn-outline text-sm flex items-center gap-1.5">
+              <button data-tour="customize" onClick={handleEnterEdit} className="btn-outline text-sm flex items-center gap-1.5">
                 <Pencil className="w-4 h-4" /> Customize
               </button>
             </>
@@ -247,7 +247,7 @@ export default function DashboardPage() {
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={displayWidgets.map((w) => w.id)} strategy={rectSortingStrategy}>
-              <div ref={gridRef} className="grid grid-cols-12 gap-4 auto-rows-[120px]">
+              <div ref={gridRef} data-tour="widget-grid" className="grid grid-cols-12 gap-4 auto-rows-[120px]">
                 <AnimatePresence>
                   {displayWidgets.map((widget) => (
                     <WidgetContainer

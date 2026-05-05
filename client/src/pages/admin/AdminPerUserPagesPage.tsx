@@ -125,7 +125,7 @@ export default function AdminPerUserPagesPage() {
       <Topbar
         title="Per-User Pages"
         actions={
-          <button onClick={() => setCreateOpen(true)} className="btn-primary text-sm flex items-center gap-1.5">
+          <button data-tour="new-page" onClick={() => setCreateOpen(true)} className="btn-primary text-sm flex items-center gap-1.5">
             <FilePlus className="w-4 h-4" /> Create Page
           </button>
         }
@@ -231,7 +231,7 @@ export default function AdminPerUserPagesPage() {
                   }
                 />
               ) : (
-                <div className="space-y-2">
+                <div data-tour="page-list" className="space-y-2">
                   {assignments.map((assignment) => (
                     <div key={assignment.id} className="card flex items-center gap-4 p-4">
                       <span className="text-2xl">{assignment.page.icon || '📄'}</span>

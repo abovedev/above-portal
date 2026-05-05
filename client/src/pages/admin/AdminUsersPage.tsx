@@ -123,7 +123,7 @@ export default function AdminUsersPage() {
       <Topbar
         title="Users"
         actions={
-          <button onClick={() => setInviteOpen(true)} className="btn-primary text-sm flex items-center gap-1.5">
+          <button data-tour="new-user" onClick={() => setInviteOpen(true)} className="btn-primary text-sm flex items-center gap-1.5">
             <Plus className="w-4 h-4" /> Invite User
           </button>
         }
@@ -167,7 +167,7 @@ export default function AdminUsersPage() {
         ) : users.length === 0 ? (
           <EmptyState icon={Plus} title="No users found" description="Try adjusting your search or filters" />
         ) : (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card overflow-hidden">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} data-tour="user-list" className="card overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
