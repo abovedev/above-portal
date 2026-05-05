@@ -4,6 +4,7 @@ import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
 import { aiSearchDrive, aiGetDocument, aiListCalendarEvents, aiSearchGmail, aiListChatSpaces, aiGetChatMessages } from './google';
 import { aiGetAsanaTasks } from './asana';
+import { buildAssistantSystemPrompt, getAISettings, getEnabledAITools } from '../services/aiSettings';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -194,6 +195,14 @@ export async function chat(req: AuthRequest, res: Response) {
   }
 
   try {
+    const aiSettings = await getAISettings();
+    if (!aiSettings.aiAssistantEnabled) {
+      return sendSuccess(res, { reply: 'AI Assistant is currently disabled by the admin.' });
+    }
+
+    const systemPrompt = buildAssistantSystemPrompt(aiSettings, SYSTEM_PROMPT);
+    const enabledTools = getEnabledAITools(aiSettings, TOOLS);
+
     // Build the conversation as Anthropic messages, keeping last 20 turns
     let apiMessages: Anthropic.MessageParam[] = messages.slice(-20).map((m) => ({
       role: m.role,
@@ -205,8 +214,8 @@ export async function chat(req: AuthRequest, res: Response) {
       const response = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        tools: TOOLS,
+        system: systemPrompt,
+        tools: enabledTools,
         messages: apiMessages,
       });
 
@@ -229,9 +238,27 @@ export async function chat(req: AuthRequest, res: Response) {
 
           try {
             if (block.name === 'search_drive') {
+              if (aiSettings.documentAccessMode === 'NO_DOCUMENT_ACCESS') {
+                result = 'Document access is disabled by the admin.';
+                toolResults.push({
+                  type: 'tool_result',
+                  tool_use_id: block.id,
+                  content: result,
+                });
+                continue;
+              }
               const { query } = block.input as { query: string };
               result = await aiSearchDrive(userId, query);
             } else if (block.name === 'get_document') {
+              if (aiSettings.documentAccessMode === 'NO_DOCUMENT_ACCESS') {
+                result = 'Document access is disabled by the admin.';
+                toolResults.push({
+                  type: 'tool_result',
+                  tool_use_id: block.id,
+                  content: result,
+                });
+                continue;
+              }
               const { file_id } = block.input as { file_id: string };
               result = await aiGetDocument(userId, file_id);
             } else if (block.name === 'list_calendar_events') {

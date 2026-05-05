@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, FileText, Users, Megaphone, Settings,
-  ChevronLeft, ChevronRight, LogOut, BookOpen, UserCog
+  ChevronLeft, ChevronRight, LogOut, BookOpen, UserCog, Bot
 } from 'lucide-react';
 import logo from '@/assets/logo_81bd7332c31221e7511fb2f09781db21_1x.png';
 import { toast } from 'sonner';
@@ -18,6 +18,7 @@ const navItems = [
   { to: '/admin/pages/per-user', label: 'Per-User Pages', icon: FileText },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/announcements', label: 'Announcements', icon: Megaphone },
+  { to: '/admin/ai-settings', label: 'AI Settings', icon: Bot },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

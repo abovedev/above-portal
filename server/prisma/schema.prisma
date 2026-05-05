@@ -56,6 +56,7 @@ enum NotificationType {
   ANNOUNCEMENT
   SYSTEM
   TASK_REMINDER
+  MENTION
 }
 
 model User {
@@ -85,6 +86,10 @@ model User {
   assignedBy    PageAssignment[]   @relation("AssignedByAdmin")
   pagesCreated  Page[]
   announcements Announcement[]
+  comments      AnnouncementComment[]
+  reactions     AnnouncementReaction[]
+  mentions      AnnouncementMention[]
+  updatedAISettings AiSettings[] @relation("AISettingsUpdatedBy")
 }
 
 model RefreshToken {
@@ -182,6 +187,43 @@ model Announcement {
   expiresAt   DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  comments    AnnouncementComment[]
+  reactions   AnnouncementReaction[]
+}
+
+model AnnouncementComment {
+  id             String       @id @default(cuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content        String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  mentions       AnnouncementMention[]
+}
+
+model AnnouncementReaction {
+  id             String       @id @default(cuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji          String
+  createdAt      DateTime     @default(now())
+
+  @@unique([announcementId, userId, emoji])
+}
+
+model AnnouncementMention {
+  id        String              @id @default(cuid())
+  commentId String
+  comment   AnnouncementComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  read      Boolean             @default(false)
+  createdAt DateTime            @default(now())
 }
 
 model Task {
@@ -229,4 +271,19 @@ model CompanySettings {
   accentColor  String   @default("#D7DCE2")
   defaultWidgets Json   @default("[]")
   updatedAt    DateTime @updatedAt
+}
+
+model AiSettings {
+  id                       String   @id @default("default")
+  emailTone                String   @default("Professional")
+  defaultEmailInstructions String   @default("Write clear, polite, professional emails. Keep the response concise and easy to understand.")
+  writingStyleNotes        String   @default("Use Australian English. Avoid overly technical language unless requested.")
+  documentAccessMode       String   @default("NO_DOCUMENT_ACCESS")
+  allowedFileTypes         String[] @default([])
+  extraSystemInstructions  String   @default("")
+  aiAssistantEnabled       Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  updatedByAdminId         String?
+  updatedByAdmin           User?    @relation("AISettingsUpdatedBy", fields: [updatedByAdminId], references: [id], onDelete: SetNull)
 }

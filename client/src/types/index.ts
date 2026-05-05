@@ -89,6 +89,30 @@ export interface Announcement {
   expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
+  _count?: { comments: number };
+  reactionSummary?: { emoji: string; count: number; userIds: string[] }[];
+}
+
+export interface AnnouncementComment {
+  id: string;
+  announcementId: string;
+  userId: string;
+  user: { id: string; firstName: string; lastName: string; avatar: string | null };
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AnnouncementReactionItem {
+  id: string;
+  announcementId: string;
+  userId: string;
+  emoji: string;
+}
+
+export interface AnnouncementDetail extends Announcement {
+  comments: AnnouncementComment[];
+  reactions: AnnouncementReactionItem[];
 }
 
 export interface Task {
@@ -133,6 +157,36 @@ export interface CompanySettings {
   accentColor: string;
   defaultWidgets: unknown;
   updatedAt: string;
+}
+
+export type EmailTone =
+  | 'Professional'
+  | 'Friendly'
+  | 'Casual'
+  | 'Formal'
+  | 'Short and Direct'
+  | 'Australian Business Tone';
+
+export type DocumentAccessMode =
+  | 'NO_DOCUMENT_ACCESS'
+  | 'UPLOADED_DOCUMENTS_ONLY'
+  | 'APPROVED_INTERNAL_DOCUMENTS_ONLY'
+  | 'UPLOADED_AND_APPROVED_INTERNAL_DOCUMENTS';
+
+export type AllowedFileType = 'PDF' | 'DOCX' | 'TXT_MD' | 'CSV';
+
+export interface AISettings {
+  id: string;
+  emailTone: EmailTone;
+  defaultEmailInstructions: string;
+  writingStyleNotes: string;
+  documentAccessMode: DocumentAccessMode;
+  allowedFileTypes: AllowedFileType[];
+  extraSystemInstructions: string;
+  aiAssistantEnabled: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  updatedByAdminId?: string | null;
 }
 
 export interface PageAssignment {

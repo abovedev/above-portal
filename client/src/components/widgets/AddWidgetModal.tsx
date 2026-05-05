@@ -4,7 +4,7 @@ import type { WidgetType } from '@/types';
 
 const WIDGET_OPTIONS: { type: WidgetType; label: string; desc: string; icon: React.ElementType; adminOnly?: boolean }[] = [
   { type: 'CLOCK', label: 'Clock', desc: 'Live digital clock with timezone selection', icon: Clock },
-  { type: 'ANNOUNCEMENTS', label: 'Announcements', desc: 'Latest company announcements', icon: Megaphone },
+  { type: 'ANNOUNCEMENTS', label: 'Notice Board', desc: 'Company notices with comments and reactions', icon: Megaphone },
   { type: 'TASKS', label: 'My Tasks', desc: 'Personal to-do list', icon: CheckSquare },
   { type: 'QUICK_LINKS', label: 'Quick Links', desc: 'Bookmarks and shortcuts', icon: Link2 },
   { type: 'NOTES', label: 'Notes', desc: 'Sticky notepad (autosaves)', icon: StickyNote },

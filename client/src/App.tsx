@@ -29,6 +29,7 @@ import AdminPerUserPagesPage from '@/pages/admin/AdminPerUserPagesPage';
 import AdminUsersPage from '@/pages/admin/AdminUsersPage';
 import AdminAnnouncementsPage from '@/pages/admin/AdminAnnouncementsPage';
 import AdminSettingsPage from '@/pages/admin/AdminSettingsPage';
+import AdminAISettingsPage from '@/pages/admin/AdminAISettingsPage';
 
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminRoute from '@/components/AdminRoute';
@@ -98,6 +99,7 @@ export default function App() {
               <Route path="/admin/pages/per-user/:id/edit" element={<AdminPageEditorPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
+              <Route path="/admin/ai-settings" element={<AdminAISettingsPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
             </Route>
           </Route>

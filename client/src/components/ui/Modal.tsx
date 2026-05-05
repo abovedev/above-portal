@@ -36,16 +36,14 @@ export default function Modal({ open, onClose, title, children, className, size 
               />
             </Dialog.Overlay>
             <Dialog.Content asChild>
-              <motion.div
-                className={cn(
-                  'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full mx-4',
-                  sizes[size]
-                )}
-                initial={{ opacity: 0, scale: 0.95, y: 8 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 8 }}
-                transition={{ duration: 0.15 }}
-              >
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+                <motion.div
+                  className={cn('w-full pointer-events-auto', sizes[size])}
+                  initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                  transition={{ duration: 0.15 }}
+                >
                 <div className={cn('bg-surface border border-border rounded-card shadow-card-hover', className)}>
                   {title && (
                     <div className="flex items-center justify-between p-4 border-b border-border">
@@ -64,7 +62,8 @@ export default function Modal({ open, onClose, title, children, className, size 
                   )}
                   <div className="p-4">{children}</div>
                 </div>
-              </motion.div>
+                </motion.div>
+              </div>
             </Dialog.Content>
           </Dialog.Portal>
         )}

@@ -145,3 +145,23 @@ export async function uploadAvatar(req: AuthRequest, res: Response) {
   });
   return sendSuccess(res, { avatarUrl });
 }
+
+export async function getMentionUsers(req: AuthRequest, res: Response) {
+  const q = (req.query.q as string) || '';
+  const users = await prisma.user.findMany({
+    where: {
+      isActive: true,
+      id: { not: req.user!.userId },
+      ...(q && {
+        OR: [
+          { firstName: { contains: q, mode: 'insensitive' } },
+          { lastName: { contains: q, mode: 'insensitive' } },
+        ],
+      }),
+    },
+    select: { id: true, firstName: true, lastName: true, avatar: true },
+    take: 8,
+    orderBy: { firstName: 'asc' },
+  });
+  return sendSuccess(res, { users });
+}
