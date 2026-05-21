@@ -34,7 +34,7 @@ const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',').map(o => o.trim());
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.some(o => origin === o || origin.endsWith('.vercel.app'))) {
+    if (!origin || allowedOrigins.some(o => origin === o || origin.endsWith('.vercel.app') || origin.endsWith('.abovedigital.co'))) {
       cb(null, true);
     } else {
       cb(new Error('Not allowed by CORS'));
