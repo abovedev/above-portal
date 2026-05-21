@@ -88,7 +88,7 @@ export default function GearPage() {
   const [myRequests, setMyRequests] = useState<GearRequest[]>([]);
   const [myGear, setMyGear] = useState<GearItem[]>([]);
   const [returnHistory, setReturnHistory] = useState<(GearAssignmentSummary & { returnedAt: string; gearItem: { id: string; name: string; brand?: string; category: string } })[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [requestItem, setRequestItem] = useState<GearItem | null>(null);
@@ -101,9 +101,10 @@ export default function GearPage() {
   const [returning, setReturning] = useState(false);
 
   const loadCatalog = useCallback(async () => {
+    setLoading(true);
     try {
       const res = await api.get('/gear', { params: { search: search || undefined, category: categoryFilter || undefined } });
-      const all: GearItem[] = res.data.data.items;
+      const all: GearItem[] = res.data.data.items ?? [];
       setItems(all.filter((i) => i.status !== 'RETIRED'));
       setMyGear(all.filter((i) => i.assignments && i.assignments.length > 0));
     } catch { toast.error('Failed to load gear'); }
