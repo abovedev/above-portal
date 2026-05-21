@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BookOpen, Bookmark, User, ChevronLeft,
-  ChevronRight, LogOut, ShieldCheck
+  ChevronRight, LogOut, ShieldCheck, Package,
 } from 'lucide-react';
 import logo from '@/assets/logo_81bd7332c31221e7511fb2f09781db21_1x.png';
 import { toast } from 'sonner';
@@ -22,6 +22,7 @@ const navItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/pages', label: 'Company Pages', icon: BookOpen },
   { to: '/my-pages', label: 'My Pages', icon: Bookmark },
+  { to: '/gear', label: 'Gear', icon: Package },
   { to: '/profile', label: 'Profile', icon: User },
 ];
 

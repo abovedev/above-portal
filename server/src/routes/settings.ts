@@ -2,21 +2,23 @@ import { Router } from 'express';
 import { getSettings, updateSettings } from '../controllers/settings';
 import { requireAuth, requireAdmin } from '../middleware/auth';
 import { upload } from '../middleware/upload';
+import prisma from '../prisma/client';
+import { sendError, sendSuccess } from '../utils/response';
 
 const router = Router();
 
 router.get('/', requireAuth, getSettings);
 router.put('/', requireAdmin, updateSettings);
 router.post('/logo', requireAdmin, upload.single('logo'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ success: false, error: 'No file' });
+  if (!req.file) return sendError(res, 'No file uploaded', 400);
   const logoUrl = `/uploads/${req.file.filename}`;
-  const { PrismaClient } = await import('@prisma/client');
-  const p = new PrismaClient();
-  const settings = await p.companySettings.findFirst();
+  const settings = await prisma.companySettings.findFirst();
   if (settings) {
-    await p.companySettings.update({ where: { id: settings.id }, data: { logoUrl } });
+    await prisma.companySettings.update({ where: { id: settings.id }, data: { logoUrl } });
+  } else {
+    await prisma.companySettings.create({ data: { logoUrl } });
   }
-  res.json({ success: true, data: { logoUrl } });
+  return sendSuccess(res, { logoUrl });
 });
 
 export default router;

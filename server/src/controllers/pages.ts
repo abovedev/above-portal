@@ -102,7 +102,18 @@ export async function updatePage(req: AuthRequest, res: Response) {
 
   const { slug: rawSlug, ...rest } = parsed.data;
   const data: Record<string, unknown> = { ...rest };
-  if (rawSlug) data.slug = slugify(rawSlug);
+  if (rawSlug) {
+    const slug = slugify(rawSlug);
+    const conflictingPage = await prisma.page.findFirst({
+      where: { slug, NOT: { id } },
+      select: { id: true },
+    });
+    if (conflictingPage) return sendError(res, 'Slug is already in use', 409);
+    data.slug = slug;
+  }
+
+  const existing = await prisma.page.findUnique({ where: { id } });
+  if (!existing) return sendError(res, 'Page not found', 404);
 
   const page = await prisma.page.update({
     where: { id },
@@ -115,6 +126,9 @@ export async function updatePage(req: AuthRequest, res: Response) {
 
 export async function deletePage(req: AuthRequest, res: Response) {
   const id = req.params.id as string;
+  const existing = await prisma.page.findUnique({ where: { id } });
+  if (!existing) return sendError(res, 'Page not found', 404);
+
   await prisma.page.delete({ where: { id } });
   return sendSuccess(res, null, 'Page deleted');
 }

@@ -57,6 +57,24 @@ enum NotificationType {
   SYSTEM
   TASK_REMINDER
   MENTION
+  GEAR_REQUEST
+}
+
+enum GearStatus {
+  AVAILABLE
+  CHECKED_OUT
+  RESERVED
+  RETURN_PENDING
+  MAINTENANCE
+  RETIRED
+}
+
+enum GearRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+  COLLECTED
 }
 
 model User {
@@ -89,7 +107,11 @@ model User {
   comments      AnnouncementComment[]
   reactions     AnnouncementReaction[]
   mentions      AnnouncementMention[]
-  updatedAISettings AiSettings[] @relation("AISettingsUpdatedBy")
+  updatedAISettings    AiSettings[]     @relation("AISettingsUpdatedBy")
+  gearRequests         GearRequest[]    @relation("GearRequester")
+  gearReviewedRequests GearRequest[]    @relation("GearReviewer")
+  gearAssignmentsUser  GearAssignment[] @relation("GearAssignee")
+  gearAssignmentsAdmin GearAssignment[] @relation("GearAssigner")
 }
 
 model RefreshToken {
@@ -286,4 +308,63 @@ model AiSettings {
   updatedAt                DateTime @updatedAt
   updatedByAdminId         String?
   updatedByAdmin           User?    @relation("AISettingsUpdatedBy", fields: [updatedByAdminId], references: [id], onDelete: SetNull)
+}
+
+model GearItem {
+  id             String     @id @default(cuid())
+  name           String
+  brand          String?
+  model          String?
+  category       String     @default("Other")
+  serialNumber   String?
+  imei           String?
+  assetTag       String?
+  description    String?
+  notes          String?
+  photo          String?
+  purchaseDate   DateTime?
+  purchaseCost   Float?
+  vendor         String?
+  warrantyExpiry DateTime?
+  condition      String     @default("Good")
+  location       String?
+  status         GearStatus @default(AVAILABLE)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  requests    GearRequest[]
+  assignments GearAssignment[]
+}
+
+model GearRequest {
+  id           String            @id @default(cuid())
+  gearItemId   String
+  gearItem     GearItem          @relation(fields: [gearItemId], references: [id], onDelete: Cascade)
+  requesterId  String
+  requester    User              @relation("GearRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  status       GearRequestStatus @default(PENDING)
+  reason       String?
+  startDate    DateTime?
+  endDate      DateTime?
+  adminNote    String?
+  reviewedById String?
+  reviewedBy   User?             @relation("GearReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt   DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+model GearAssignment {
+  id           String    @id @default(cuid())
+  gearItemId   String
+  gearItem     GearItem  @relation(fields: [gearItemId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation("GearAssignee", fields: [userId], references: [id], onDelete: Cascade)
+  assignedById String
+  assignedBy   User      @relation("GearAssigner", fields: [assignedById], references: [id], onDelete: Cascade)
+  checkedOutAt DateTime  @default(now())
+  dueDate      DateTime?
+  returnedAt   DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
 }

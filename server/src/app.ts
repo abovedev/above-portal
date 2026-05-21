@@ -21,6 +21,7 @@ import asanaRoutes from './routes/asana';
 import googleRoutes from './routes/google';
 import aiRoutes from './routes/ai';
 import aiSettingsRoutes from './routes/aiSettings';
+import gearRoutes from './routes/gear';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -65,6 +66,7 @@ app.use('/api/asana', asanaRoutes);
 app.use('/api/google', googleRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/admin/ai-settings', aiSettingsRoutes);
+app.use('/api/gear', gearRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });

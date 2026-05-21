@@ -5,6 +5,8 @@ import { AuthRequest } from '../middleware/auth';
 import { aiSearchDrive, aiGetDocument, aiListCalendarEvents, aiSearchGmail, aiListChatSpaces, aiGetChatMessages } from './google';
 import { aiGetAsanaTasks } from './asana';
 import { buildAssistantSystemPrompt, getAISettings, getEnabledAITools } from '../services/aiSettings';
+import prisma from '../prisma/client';
+import { pushNotification } from '../utils/notificationStream';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -93,6 +95,24 @@ The dashboard is a drag-and-drop grid of widgets. Users can personalise it by ad
 - Connect from the Tasks widget → Connect Asana
 - Allows importing Asana tasks into the portal task list
 
+### Gear Management
+Above Portal has a Gear Management system for company equipment.
+- **Users** can browse available gear, check who has something, and submit requests — all via chat or the Gear tab in the sidebar.
+- **Admins** can manage inventory, approve/decline requests, and manually check gear in/out.
+
+**Gear tools available to you:**
+- \`check_gear_availability\`: Search for gear items by name or category. Shows status and who has it if checked out.
+- \`submit_gear_request\`: Submit a gear request on behalf of the user. Only works for AVAILABLE gear.
+- \`get_pending_gear_requests\`: (Admin only) Look up pending gear requests. Search by requester name or gear name.
+- \`review_gear_request\`: (Admin only) Approve or decline a gear request by its ID. The requester gets a notification.
+
+**Important gear rules:**
+- If a user asks "who has the laptop?" or "is the camera available?" — use check_gear_availability.
+- If a user says "I want to use the X" or "can you request the X for me?" — use check_gear_availability first to confirm availability, then use submit_gear_request.
+- Always confirm with the user before submitting a request — summarise what you're about to request.
+- If gear is not AVAILABLE, tell the user who has it and suggest they wait or contact an admin.
+- If an admin says "approve X's request" or "decline the camera request" — use get_pending_gear_requests to find it, then review_gear_request to action it. No need to ask for confirmation if the intent is clear.
+
 ### Profile
 - Click your name/avatar in the sidebar → Profile
 - Update name, avatar, department, position, and password
@@ -175,6 +195,80 @@ const TOOLS: Anthropic.Tool[] = [
       },
     },
   },
+  {
+    name: 'check_gear_availability',
+    description: "Search company gear items by name or category. Returns status, who currently has it (if checked out), and key details. Use this when asked about gear availability or who is using a piece of equipment.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Gear name or category to search for (e.g. "laptop", "iPhone", "camera")' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'submit_gear_request',
+    description: "Submit a gear request on behalf of the user. Only use this after the user has confirmed they want to submit the request. The gear must be AVAILABLE.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        gear_item_id: { type: 'string', description: 'The ID of the gear item from check_gear_availability results' },
+        reason: { type: 'string', description: 'Brief reason for requesting the gear (e.g. "Client shoot on Thursday")' },
+        start_date: { type: 'string', description: 'Optional start date in YYYY-MM-DD format' },
+        end_date: { type: 'string', description: 'Optional end date in YYYY-MM-DD format' },
+      },
+      required: ['gear_item_id'],
+    },
+  },
+  {
+    name: 'checkout_gear',
+    description: "Admin only. Manually check out a gear item to a specific user by name. Use check_gear_availability first to get the gear item ID, and get_users to find the user if needed. The gear must be AVAILABLE or RESERVED.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        gear_item_id: { type: 'string', description: 'The ID of the gear item to check out' },
+        user_id: { type: 'string', description: 'The ID of the user to assign the gear to' },
+        due_date: { type: 'string', description: 'Optional return due date in YYYY-MM-DD format' },
+        notes: { type: 'string', description: 'Optional notes about this checkout' },
+      },
+      required: ['gear_item_id', 'user_id'],
+    },
+  },
+  {
+    name: 'get_users',
+    description: "Admin only. Get a list of users to find a user ID when checking out gear. Search by name.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Name to search for (e.g. "Rene")' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'get_pending_gear_requests',
+    description: "Admin only. Look up pending gear requests. Search by requester name or gear name to find the right request ID before approving or declining.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Name of the requester or gear item to search for (e.g. "Rene", "camera")' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'review_gear_request',
+    description: "Admin only. Approve or decline a gear request by its ID. The requester will receive a notification. Use get_pending_gear_requests first to find the request ID.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        request_id: { type: 'string', description: 'The ID of the gear request from get_pending_gear_requests results' },
+        action: { type: 'string', enum: ['APPROVED', 'DECLINED'], description: 'Whether to approve or decline the request' },
+        admin_note: { type: 'string', description: 'Optional note to send to the requester (e.g. "Please collect from front desk")' },
+      },
+      required: ['request_id', 'action'],
+    },
+  },
 ];
 
 interface ChatMessage {
@@ -185,6 +279,7 @@ interface ChatMessage {
 export async function chat(req: AuthRequest, res: Response) {
   const { messages } = req.body as { messages: ChatMessage[] };
   const userId = req.user!.userId;
+  const userRole = req.user!.role;
 
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return sendError(res, 'messages array is required', 400);
@@ -275,6 +370,42 @@ export async function chat(req: AuthRequest, res: Response) {
             } else if (block.name === 'get_asana_tasks') {
               const { query } = (block.input ?? {}) as { query?: string };
               result = await aiGetAsanaTasks(userId, query);
+            } else if (block.name === 'check_gear_availability') {
+              const { query } = block.input as { query: string };
+              result = await aiCheckGearAvailability(query);
+            } else if (block.name === 'submit_gear_request') {
+              const { gear_item_id, reason, start_date, end_date } = block.input as {
+                gear_item_id: string; reason?: string; start_date?: string; end_date?: string;
+              };
+              result = await aiSubmitGearRequest(userId, gear_item_id, reason, start_date, end_date);
+            } else if (block.name === 'checkout_gear') {
+              if (userRole !== 'ADMIN') { result = 'Only admins can check out gear.'; }
+              else {
+                const { gear_item_id, user_id, due_date, notes } = block.input as {
+                  gear_item_id: string; user_id: string; due_date?: string; notes?: string;
+                };
+                result = await aiCheckoutGear(userId, gear_item_id, user_id, due_date, notes);
+              }
+            } else if (block.name === 'get_users') {
+              if (userRole !== 'ADMIN') { result = 'Only admins can look up users.'; }
+              else {
+                const { query } = block.input as { query: string };
+                result = await aiGetUsers(query);
+              }
+            } else if (block.name === 'get_pending_gear_requests') {
+              if (userRole !== 'ADMIN') { result = 'Only admins can view gear requests.'; }
+              else {
+                const { query } = block.input as { query: string };
+                result = await aiGetPendingGearRequests(query);
+              }
+            } else if (block.name === 'review_gear_request') {
+              if (userRole !== 'ADMIN') { result = 'Only admins can approve or decline gear requests.'; }
+              else {
+                const { request_id, action, admin_note } = block.input as {
+                  request_id: string; action: 'APPROVED' | 'DECLINED'; admin_note?: string;
+                };
+                result = await aiReviewGearRequest(userId, request_id, action, admin_note);
+              }
             } else {
               result = 'Unknown tool.';
             }
@@ -304,4 +435,236 @@ export async function chat(req: AuthRequest, res: Response) {
     const message = err instanceof Error ? err.message : 'AI request failed';
     return sendError(res, message, 500);
   }
+}
+
+// ─── Gear AI helpers ───────────────────────────────────────────────────────────
+
+async function aiCheckGearAvailability(query: string): Promise<string> {
+  const items = await prisma.gearItem.findMany({
+    where: {
+      status: { not: 'RETIRED' },
+      OR: [
+        { name: { contains: query, mode: 'insensitive' } },
+        { brand: { contains: query, mode: 'insensitive' } },
+        { model: { contains: query, mode: 'insensitive' } },
+        { category: { contains: query, mode: 'insensitive' } },
+      ],
+    },
+    include: {
+      assignments: {
+        where: { returnedAt: null },
+        include: { user: { select: { firstName: true, lastName: true } } },
+        take: 1,
+      },
+    },
+    take: 10,
+  });
+
+  if (items.length === 0) return `No gear found matching "${query}".`;
+
+  return items.map((item) => {
+    const a = item.assignments[0];
+    const who = a ? `checked out to ${a.user.firstName} ${a.user.lastName}${a.dueDate ? `, due back ${a.dueDate.toISOString().slice(0, 10)}` : ''}` : null;
+    return [
+      `**${item.name}** (ID: ${item.id})`,
+      `  Status: ${item.status}${who ? ` — ${who}` : ''}`,
+      item.brand ? `  Brand: ${item.brand}${item.model ? ` ${item.model}` : ''}` : null,
+      `  Category: ${item.category} | Condition: ${item.condition}`,
+      item.location ? `  Location: ${item.location}` : null,
+    ].filter(Boolean).join('\n');
+  }).join('\n\n');
+}
+
+async function aiSubmitGearRequest(
+  userId: string,
+  gearItemId: string,
+  reason?: string,
+  startDate?: string,
+  endDate?: string,
+): Promise<string> {
+  const item = await prisma.gearItem.findUnique({ where: { id: gearItemId } });
+  if (!item) return 'Gear item not found.';
+  if (item.status !== 'AVAILABLE') return `"${item.name}" is not available right now (status: ${item.status}). Cannot submit request.`;
+
+  const existing = await prisma.gearRequest.findFirst({
+    where: { gearItemId, requesterId: userId, status: 'PENDING' },
+  });
+  if (existing) return `You already have a pending request for "${item.name}".`;
+
+  await prisma.gearRequest.create({
+    data: {
+      gearItemId,
+      requesterId: userId,
+      reason: reason || null,
+      startDate: startDate ? new Date(startDate) : null,
+      endDate: endDate ? new Date(endDate) : null,
+    },
+  });
+
+  // Notify admins
+  const admins = await prisma.user.findMany({ where: { role: 'ADMIN', isActive: true }, select: { id: true } });
+  const requester = await prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } });
+  await Promise.all(
+    admins.map(async (admin) => {
+      const n = await prisma.notification.create({
+        data: {
+          userId: admin.id,
+          title: 'New Gear Request',
+          message: `${requester?.firstName} ${requester?.lastName} requested ${item.name} via AD Brain.`,
+          type: 'GEAR_REQUEST',
+          link: '/admin/gear/requests',
+        },
+      });
+      pushNotification(n);
+    })
+  );
+
+  return `Request submitted for "${item.name}". An admin will review it and you'll get a notification when it's approved or declined.`;
+}
+
+async function aiGetUsers(query: string): Promise<string> {
+  const users = await prisma.user.findMany({
+    where: {
+      isActive: true,
+      OR: [
+        { firstName: { contains: query, mode: 'insensitive' } },
+        { lastName: { contains: query, mode: 'insensitive' } },
+        { email: { contains: query, mode: 'insensitive' } },
+      ],
+    },
+    select: { id: true, firstName: true, lastName: true, email: true, role: true },
+    take: 10,
+  });
+  if (users.length === 0) return `No users found matching "${query}".`;
+  return users.map((u) => `**${u.firstName} ${u.lastName}** (ID: ${u.id}) — ${u.email} [${u.role}]`).join('\n');
+}
+
+async function aiCheckoutGear(
+  adminId: string,
+  gearItemId: string,
+  targetUserId: string,
+  dueDate?: string,
+  notes?: string,
+): Promise<string> {
+  const item = await prisma.gearItem.findUnique({ where: { id: gearItemId } });
+  if (!item) return 'Gear item not found.';
+  if (item.status === 'RETURN_PENDING') return `"${item.name}" has a pending return — wait for it to be confirmed before checking it out again.`;
+  if (item.status !== 'AVAILABLE' && item.status !== 'RESERVED') {
+    return `"${item.name}" is currently ${item.status.toLowerCase().replace('_', ' ')} and cannot be checked out.`;
+  }
+
+  const targetUser = await prisma.user.findFirst({
+    where: { id: targetUserId, isActive: true },
+    select: { firstName: true, lastName: true },
+  });
+  if (!targetUser) return 'Active user not found.';
+
+  await prisma.$transaction([
+    prisma.gearAssignment.create({
+      data: {
+        gearItemId,
+        userId: targetUserId,
+        assignedById: adminId,
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        notes: notes || undefined,
+      },
+    }),
+    prisma.gearItem.update({ where: { id: gearItemId }, data: { status: 'CHECKED_OUT' } }),
+  ]);
+
+  const notification = await prisma.notification.create({
+    data: {
+      userId: targetUserId,
+      title: 'Gear Checked Out',
+      message: `${item.name} has been checked out to you.${notes ? ` Note: ${notes}` : ''}`,
+      type: 'GEAR_REQUEST',
+      link: '/gear',
+    },
+  });
+  pushNotification(notification);
+
+  return `Done. "${item.name}" is now checked out to ${targetUser.firstName} ${targetUser.lastName}. They've been notified.${dueDate ? ` Due back: ${dueDate}.` : ''}`;
+}
+
+async function aiGetPendingGearRequests(query: string): Promise<string> {
+  const requests = await prisma.gearRequest.findMany({
+    where: {
+      status: 'PENDING',
+      OR: [
+        { requester: { firstName: { contains: query, mode: 'insensitive' } } },
+        { requester: { lastName: { contains: query, mode: 'insensitive' } } },
+        { gearItem: { name: { contains: query, mode: 'insensitive' } } },
+        { gearItem: { category: { contains: query, mode: 'insensitive' } } },
+      ],
+    },
+    include: {
+      requester: { select: { firstName: true, lastName: true } },
+      gearItem: { select: { name: true, status: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+  });
+
+  if (requests.length === 0) return `No pending gear requests found matching "${query}".`;
+
+  return requests.map((r) => [
+    `**Request ID: ${r.id}**`,
+    `  Requester: ${r.requester.firstName} ${r.requester.lastName}`,
+    `  Gear: ${r.gearItem.name} (currently: ${r.gearItem.status})`,
+    r.reason ? `  Reason: ${r.reason}` : null,
+    r.startDate ? `  Dates: ${r.startDate.toISOString().slice(0, 10)} to ${r.endDate?.toISOString().slice(0, 10) ?? 'open'}` : null,
+    `  Submitted: ${r.createdAt.toISOString().slice(0, 10)}`,
+  ].filter(Boolean).join('\n')).join('\n\n');
+}
+
+async function aiReviewGearRequest(
+  adminId: string,
+  requestId: string,
+  action: 'APPROVED' | 'DECLINED',
+  adminNote?: string,
+): Promise<string> {
+  const gearRequest = await prisma.gearRequest.findUnique({ where: { id: requestId } });
+  if (!gearRequest) return 'Request not found.';
+  if (gearRequest.status !== 'PENDING') return `This request has already been ${gearRequest.status.toLowerCase()}.`;
+
+  const gearItem = await prisma.gearItem.findUnique({ where: { id: gearRequest.gearItemId } });
+  if (!gearItem) return 'Gear item not found.';
+  if (action === 'APPROVED' && gearItem.status !== 'AVAILABLE') {
+    return `"${gearItem.name}" is no longer available, so this request cannot be approved.`;
+  }
+
+  await prisma.gearRequest.update({
+    where: { id: requestId },
+    data: {
+      status: action,
+      adminNote: adminNote || null,
+      reviewedById: adminId,
+      reviewedAt: new Date(),
+    },
+  });
+
+  if (action === 'APPROVED') {
+    await prisma.gearItem.update({ where: { id: gearItem.id }, data: { status: 'RESERVED' } });
+  }
+
+  const requester = await prisma.user.findUnique({
+    where: { id: gearRequest.requesterId },
+    select: { firstName: true, lastName: true },
+  });
+
+  const noteText = adminNote ? ` Note: ${adminNote}` : '';
+  const notification = await prisma.notification.create({
+    data: {
+      userId: gearRequest.requesterId,
+      title: action === 'APPROVED' ? 'Gear Request Approved' : 'Gear Request Declined',
+      message: action === 'APPROVED'
+        ? `Your request for ${gearItem.name} has been approved.${noteText}`
+        : `Your request for ${gearItem.name} was declined.${noteText}`,
+      type: 'GEAR_REQUEST',
+      link: '/gear',
+    },
+  });
+  pushNotification(notification);
+
+  return `Done. ${requester?.firstName} ${requester?.lastName}'s request for "${gearItem.name}" has been ${action.toLowerCase()}. They've been notified.${adminNote ? ` Your note "${adminNote}" was included.` : ''}`;
 }

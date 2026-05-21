@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import type { LucideIcon } from 'lucide-react';
 
 export function Skeleton({ className }: { className?: string }) {
   return <div className={cn('skeleton', className)} />;
@@ -39,5 +40,17 @@ export function TableRowSkeleton({ cols = 5 }: { cols?: number }) {
         </td>
       ))}
     </tr>
+  );
+}
+
+export function EmptyState({ icon: Icon, title, description }: { icon: LucideIcon; title: string; description?: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="w-12 h-12 rounded-full bg-surface-hover flex items-center justify-center mb-3">
+        <Icon className="w-6 h-6 text-text-muted" />
+      </div>
+      <p className="text-sm font-medium text-text-primary">{title}</p>
+      {description && <p className="text-xs text-text-muted mt-1 max-w-xs">{description}</p>}
+    </div>
   );
 }

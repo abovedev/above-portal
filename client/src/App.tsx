@@ -30,6 +30,9 @@ import AdminUsersPage from '@/pages/admin/AdminUsersPage';
 import AdminAnnouncementsPage from '@/pages/admin/AdminAnnouncementsPage';
 import AdminSettingsPage from '@/pages/admin/AdminSettingsPage';
 import AdminAISettingsPage from '@/pages/admin/AdminAISettingsPage';
+import AdminGearPage from '@/pages/admin/AdminGearPage';
+import AdminGearRequestsPage from '@/pages/admin/AdminGearRequestsPage';
+import GearPage from '@/pages/user/GearPage';
 
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminRoute from '@/components/AdminRoute';
@@ -83,6 +86,7 @@ export default function App() {
               <Route path="/pages" element={<CompanyPagesPage />} />
               <Route path="/my-pages" element={<MyPagesPage />} />
               <Route path="/pages/:slug" element={<PageViewPage />} />
+              <Route path="/gear" element={<GearPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
           </Route>
@@ -99,6 +103,8 @@ export default function App() {
               <Route path="/admin/pages/per-user/:id/edit" element={<AdminPageEditorPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
+              <Route path="/admin/gear" element={<AdminGearPage />} />
+              <Route path="/admin/gear/requests" element={<AdminGearRequestsPage />} />
               <Route path="/admin/ai-settings" element={<AdminAISettingsPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
             </Route>
