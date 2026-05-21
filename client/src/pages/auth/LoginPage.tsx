@@ -150,14 +150,6 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
-
-          <div className="mt-8 p-4 bg-surface-elevated rounded-lg border border-border">
-            <p className="text-text-muted text-xs mb-2 font-medium">Demo credentials</p>
-            <div className="space-y-1 text-xs text-text-secondary">
-              <p><span className="text-text-muted">Admin:</span> admin@company.com / admin123</p>
-              <p><span className="text-text-muted">User:</span> dev@abovedigital.co / user123</p>
-            </div>
-          </div>
         </motion.div>
       </div>
     </div>
