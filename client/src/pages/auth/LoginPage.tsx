@@ -48,7 +48,7 @@ export default function LoginPage() {
           <div className="w-10 h-10 rounded-xl bg-accent-gradient flex items-center justify-center shadow-glow">
             <Zap className="w-5 h-5 text-background" />
           </div>
-          <span className="font-heading font-bold text-xl text-text-primary">Above Portal</span>
+          <span className="font-heading font-bold text-xl text-text-primary">Above Digital Portal</span>
         </div>
 
         <motion.div
@@ -58,18 +58,18 @@ export default function LoginPage() {
           transition={{ delay: 0.2 }}
         >
           <h1 className="font-heading text-4xl font-bold text-text-primary mb-4 leading-tight">
-            Your workspace,<br />
-            <span className="text-gradient">beautifully unified.</span>
+            One portal.<br />
+            <span className="text-gradient">Everything Above.</span>
           </h1>
           <p className="text-text-secondary text-lg leading-relaxed max-w-sm">
-            Access company resources, manage tasks, and stay connected — all in one intelligent portal.
+            The command centre for the Above Digital team — projects, gear, AI, and company knowledge in one place.
           </p>
 
           <div className="mt-12 space-y-4">
             {[
-              { label: 'Customizable Dashboard', desc: 'Drag-and-drop widgets built around your workflow' },
-              { label: 'Company Knowledge Base', desc: 'Structured pages and documentation at your fingertips' },
-              { label: 'Real-time Announcements', desc: 'Stay informed with priority-tiered company updates' },
+              { label: 'AI-Powered Assistant', desc: 'Chat with AD Brain to search Drive, manage tasks, check gear, and draft emails' },
+              { label: 'Gear & Asset Management', desc: 'Request, track, and return company equipment with full approval workflows' },
+              { label: 'Google Workspace Connected', desc: 'Gmail, Calendar, Drive, and Chat — accessible without leaving the portal' },
             ].map((item) => (
               <div key={item.label} className="flex items-start gap-3">
                 <div className="w-2 h-2 rounded-full bg-accent mt-2 flex-shrink-0" />
@@ -96,7 +96,7 @@ export default function LoginPage() {
             <div className="w-9 h-9 rounded-xl bg-accent-gradient flex items-center justify-center shadow-glow">
               <Zap className="w-4 h-4 text-background" />
             </div>
-            <span className="font-heading font-bold text-lg text-text-primary">Above Portal</span>
+            <span className="font-heading font-bold text-lg text-text-primary">Above Digital Portal</span>
           </div>
 
           <h2 className="font-heading text-2xl font-bold text-text-primary mb-1">Sign in</h2>
