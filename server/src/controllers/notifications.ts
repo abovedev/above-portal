@@ -7,12 +7,16 @@ import { verifyAccessToken } from '../utils/jwt';
 import { addNotificationClient } from '../utils/notificationStream';
 
 export async function getNotifications(req: AuthRequest, res: Response) {
-  const notifications = await prisma.notification.findMany({
-    where: { userId: req.user!.userId },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-  });
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const [notifications, unreadCount] = await Promise.all([
+    prisma.notification.findMany({
+      where: { userId: req.user!.userId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    }),
+    prisma.notification.count({
+      where: { userId: req.user!.userId, isRead: false },
+    }),
+  ]);
   return sendSuccess(res, { notifications, unreadCount });
 }
 

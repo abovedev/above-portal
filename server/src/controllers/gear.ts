@@ -307,7 +307,7 @@ export async function submitGearRequest(req: AuthRequest, res: Response) {
 
   const item = await prisma.gearItem.findUnique({ where: { id } });
   if (!item) return sendError(res, 'Gear item not found', 404);
-  if (item.status === 'RETIRED') return sendError(res, 'This gear is retired', 400);
+  if (item.status !== 'AVAILABLE') return sendError(res, 'This gear is not available for requests', 400);
 
   const existing = await prisma.gearRequest.findFirst({
     where: { gearItemId: id, requesterId: req.user!.userId, status: 'PENDING' },

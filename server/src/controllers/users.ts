@@ -132,7 +132,27 @@ export async function deleteUser(req: AuthRequest, res: Response) {
   if (req.user!.userId === id) return sendError(res, 'Cannot delete your own account', 400);
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) return sendError(res, 'User not found', 404);
-  await prisma.user.delete({ where: { id } });
+
+  await prisma.$transaction([
+    prisma.page.updateMany({
+      where: { createdById: id },
+      data: { createdById: req.user!.userId },
+    }),
+    prisma.announcement.updateMany({
+      where: { createdById: id },
+      data: { createdById: req.user!.userId },
+    }),
+    prisma.pageAssignment.updateMany({
+      where: { assignedById: id },
+      data: { assignedById: req.user!.userId },
+    }),
+    prisma.gearAssignment.updateMany({
+      where: { assignedById: id },
+      data: { assignedById: req.user!.userId },
+    }),
+    prisma.user.delete({ where: { id } }),
+  ]);
+
   return sendSuccess(res, null, 'User deleted');
 }
 

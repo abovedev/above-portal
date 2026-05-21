@@ -62,6 +62,13 @@ export async function getPage(req: AuthRequest, res: Response) {
   if (!page.isPublished && req.user!.role !== 'ADMIN') {
     return sendError(res, 'Page not found', 404);
   }
+  if (page.type === 'PERSONAL' && req.user!.role !== 'ADMIN') {
+    const assignment = await prisma.pageAssignment.findFirst({
+      where: { pageId: page.id, userId: req.user!.userId },
+      select: { id: true },
+    });
+    if (!assignment) return sendError(res, 'Page not found', 404);
+  }
 
   return sendSuccess(res, { page });
 }
