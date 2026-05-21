@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, DragEndEvent,
@@ -38,6 +38,7 @@ export default function AdminDashboardPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [localWidgets, setLocalWidgets] = useState<Widget[]>([]);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -85,6 +86,29 @@ export default function AdminDashboardPage() {
     } catch { toast.error('Failed to add widget'); }
   };
 
+  const handleResizeStart = useCallback((widget: Widget, e: React.PointerEvent) => {
+    if (!gridRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startWidth = widget.width;
+    const startHeight = widget.height;
+    const colWidth = (gridRef.current.clientWidth - 11 * 16) / 12;
+    const rowHeight = 136;
+    const handleMove = (moveE: PointerEvent) => {
+      const newWidth = Math.max(2, Math.min(12, startWidth + Math.round((moveE.clientX - startX) / colWidth)));
+      const newHeight = Math.max(1, Math.min(8, startHeight + Math.round((moveE.clientY - startY) / rowHeight)));
+      setLocalWidgets((prev) => prev.map((w) => w.id === widget.id ? { ...w, width: newWidth, height: newHeight } : w));
+    };
+    const handleUp = () => {
+      document.removeEventListener('pointermove', handleMove);
+      document.removeEventListener('pointerup', handleUp);
+    };
+    document.addEventListener('pointermove', handleMove);
+    document.addEventListener('pointerup', handleUp);
+  }, []);
+
   const handleRemoveWidget = async (id: string) => {
     setLocalWidgets((prev) => prev.filter((w) => w.id !== id));
     removeWidget(id);
@@ -124,7 +148,7 @@ export default function AdminDashboardPage() {
       {boardEditMode && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="bg-accent/10 border-b border-accent/30 px-6 py-2 flex items-center gap-2">
           <Pencil className="w-3.5 h-3.5 text-accent" />
-          <span className="text-accent text-sm font-medium">Edit Mode — drag to rearrange, click × to remove</span>
+          <span className="text-accent text-sm font-medium">Edit Mode — drag to rearrange, drag corner to resize, × to remove</span>
         </motion.div>
       )}
 
@@ -138,10 +162,10 @@ export default function AdminDashboardPage() {
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={display.map((w) => w.id)} strategy={rectSortingStrategy}>
-              <div data-tour="admin-stats" className="grid grid-cols-12 gap-4 auto-rows-[120px]">
+              <div ref={gridRef} data-tour="admin-stats" className="grid grid-cols-12 gap-4 auto-rows-[120px]">
                 <AnimatePresence>
                   {display.map((widget) => (
-                    <WidgetContainer key={widget.id} widget={widget} editMode={boardEditMode} onRemove={boardEditMode ? handleRemoveWidget : undefined}>
+                    <WidgetContainer key={widget.id} widget={widget} editMode={boardEditMode} onRemove={boardEditMode ? handleRemoveWidget : undefined} onResizeStart={boardEditMode ? handleResizeStart : undefined}>
                       <WidgetRenderer widget={widget} />
                     </WidgetContainer>
                   ))}
