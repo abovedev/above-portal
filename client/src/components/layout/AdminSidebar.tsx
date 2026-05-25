@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, FileText, Users, Megaphone, Settings,
   ChevronLeft, ChevronRight, LogOut, BookOpen, Bot, Package, ClipboardList, UserCog,
+  Film, Tag, Camera, ClipboardCheck,
 } from 'lucide-react';
 import logo from '@/assets/logo_81bd7332c31221e7511fb2f09781db21_1x.png';
 import { toast } from 'sonner';
@@ -20,6 +21,10 @@ const navItems = [
   { to: '/admin/announcements', label: 'Notice Board', icon: Megaphone },
   { to: '/admin/gear', label: 'Gear', icon: Package },
   { to: '/admin/gear/requests', label: 'Gear Requests', icon: ClipboardList },
+  { to: '/admin/files', label: 'Files', icon: Film },
+  { to: '/admin/files/tags', label: 'File Tags', icon: Tag },
+  { to: '/admin/files/missing', label: 'Missing Shots', icon: Camera },
+  { to: '/admin/files/qa', label: 'QA Dashboard', icon: ClipboardCheck },
   { to: '/admin/ai-settings', label: 'AI Settings', icon: Bot },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
@@ -73,7 +78,7 @@ export default function AdminSidebar() {
           <NavLink
             key={to}
             to={to}
-            end={to === '/admin/dashboard'}
+            end={to === '/admin/dashboard' || to === '/admin/gear' || to === '/admin/files'}
             className={({ isActive }) =>
               cn(
                 'relative flex items-center gap-3 px-2.5 py-2 rounded-lg group',

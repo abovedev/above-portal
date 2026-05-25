@@ -138,7 +138,7 @@ export default function AdminDashboardPage() {
                 <Plus className="w-4 h-4" /> Add Widget
               </button>
               <button onClick={() => { setLocalWidgets(widgets); setBoardEditMode(true); }} className="btn-outline text-sm">
-                <Pencil className="w-4 h-4" /> Customize
+                <Pencil className="w-4 h-4" /> Customise
               </button>
             </>
           )

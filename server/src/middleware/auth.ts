@@ -39,3 +39,14 @@ export async function requireAdmin(req: AuthRequest, res: Response, next: NextFu
     next();
   });
 }
+
+export const authenticate = requireAuth;
+
+export async function requireAdminOrTagPermission(req: AuthRequest, res: Response, next: NextFunction) {
+  await requireAuth(req, res, async () => {
+    if (req.user?.role === 'ADMIN') return next();
+    const perm = await prisma.fileTagPermission.findUnique({ where: { userId: req.user!.userId } });
+    if (!perm?.canTag) return sendError(res, 'Tagging permission required', 403, 'FORBIDDEN');
+    next();
+  });
+}

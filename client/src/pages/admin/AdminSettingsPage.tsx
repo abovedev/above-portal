@@ -93,7 +93,7 @@ export default function AdminSettingsPage() {
               </div>
 
               <div>
-                <label className="label">Accent Color</label>
+                <label className="label">Accent Colour</label>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"

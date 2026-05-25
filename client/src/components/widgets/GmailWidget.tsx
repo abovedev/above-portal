@@ -21,8 +21,8 @@ function relativeDate(dateStr: string): string {
   if (diff < 60) return 'just now';
   if (diff < 3600) return `${Math.floor(diff / 60)}m`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-  if (diff < 7 * 86400) return date.toLocaleDateString('en-US', { weekday: 'short' });
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (diff < 7 * 86400) return date.toLocaleDateString('en-AU', { weekday: 'short' });
+  return date.toLocaleDateString('en-AU', { month: 'short', day: 'numeric' });
 }
 
 function GoogleConnectPrompt({ onConnect }: { onConnect: () => void }) {

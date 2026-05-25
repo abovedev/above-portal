@@ -79,7 +79,14 @@ export async function updateUser(req: AuthRequest, res: Response) {
   }
   if (isAdmin) {
     if (role !== undefined) updateData.role = role;
-    if (isActive !== undefined) updateData.isActive = isActive;
+    // Prevent an admin from deactivating or downgrading their own account
+    if (isActive !== undefined) {
+      if (isSelf && isActive === false) return sendError(res, 'You cannot deactivate your own account', 400);
+      updateData.isActive = isActive;
+    }
+    if (role !== undefined && isSelf && role !== 'ADMIN') {
+      return sendError(res, 'You cannot remove your own admin role', 400);
+    }
   }
 
   if (newPassword) {

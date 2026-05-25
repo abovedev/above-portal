@@ -22,7 +22,7 @@ const SCOPES = [
   'https://www.googleapis.com/auth/chat.memberships.readonly',
   'https://www.googleapis.com/auth/contacts.other.readonly',
   'https://www.googleapis.com/auth/directory.readonly',
-  'https://www.googleapis.com/auth/drive.readonly',
+  'https://www.googleapis.com/auth/drive',
   'https://www.googleapis.com/auth/documents.readonly',
   'email',
   'profile',

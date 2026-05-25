@@ -32,7 +32,12 @@ import AdminSettingsPage from '@/pages/admin/AdminSettingsPage';
 import AdminAISettingsPage from '@/pages/admin/AdminAISettingsPage';
 import AdminGearPage from '@/pages/admin/AdminGearPage';
 import AdminGearRequestsPage from '@/pages/admin/AdminGearRequestsPage';
+import AdminFilesPage from '@/pages/admin/AdminFilesPage';
+import AdminFileTagsPage from '@/pages/admin/AdminFileTagsPage';
+import AdminMissingShotsPage from '@/pages/admin/AdminMissingShotsPage';
+import AdminFilesQAPage from '@/pages/admin/AdminFilesQAPage';
 import GearPage from '@/pages/user/GearPage';
+import FilesPage from '@/pages/user/FilesPage';
 
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminRoute from '@/components/AdminRoute';
@@ -87,6 +92,7 @@ export default function App() {
               <Route path="/my-pages" element={<MyPagesPage />} />
               <Route path="/pages/:slug" element={<PageViewPage />} />
               <Route path="/gear" element={<GearPage />} />
+              <Route path="/files" element={<FilesPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
           </Route>
@@ -105,6 +111,10 @@ export default function App() {
               <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
               <Route path="/admin/gear" element={<AdminGearPage />} />
               <Route path="/admin/gear/requests" element={<AdminGearRequestsPage />} />
+              <Route path="/admin/files" element={<AdminFilesPage />} />
+              <Route path="/admin/files/tags" element={<AdminFileTagsPage />} />
+              <Route path="/admin/files/missing" element={<AdminMissingShotsPage />} />
+              <Route path="/admin/files/qa" element={<AdminFilesQAPage />} />
               <Route path="/admin/ai-settings" element={<AdminAISettingsPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
             </Route>

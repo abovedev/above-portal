@@ -39,7 +39,9 @@ export async function login(req: Request, res: Response) {
 
   const payload = { userId: user.id, role: user.role, email: user.email };
   const accessToken = signAccessToken(payload);
-  const refreshToken = signRefreshToken(payload);
+  // Add jti (JWT ID) with random entropy to avoid duplicate token collisions
+  const jti = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  const refreshToken = signRefreshToken({ ...payload, jti } as any);
 
   await prisma.refreshToken.create({
     data: {

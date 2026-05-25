@@ -17,9 +17,9 @@ export function formatDate(date: string | Date, format: 'short' | 'long' | 'rela
     return d.toLocaleDateString();
   }
   if (format === 'long') {
-    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    return d.toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' });
   }
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString('en-AU', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export function getInitials(firstName: string, lastName: string) {

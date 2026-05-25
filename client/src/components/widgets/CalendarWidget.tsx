@@ -24,27 +24,29 @@ function formatEventTime(start: string | null, allDay: boolean): string {
   if (!start) return '';
   if (allDay) {
     const d = new Date(start + 'T00:00:00');
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return d.toLocaleDateString('en-AU', { month: 'short', day: 'numeric' });
   }
   const d = new Date(start);
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
-  const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const timeStr = d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
   if (d.toDateString() === today.toDateString()) return `Today ${timeStr}`;
   if (d.toDateString() === tomorrow.toDateString()) return `Tomorrow ${timeStr}`;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ` ${timeStr}`;
+  return d.toLocaleDateString('en-AU', { month: 'short', day: 'numeric' }) + ` ${timeStr}`;
 }
 
 function MiniCalendar() {
   const [date, setDate] = useState(new Date());
   const year = date.getFullYear();
   const month = date.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
+  // AU calendars start Monday (0=Mon … 6=Sun)
+  const rawFirstDay = new Date(year, month, 1).getDay(); // 0=Sun,6=Sat
+  const firstDay = (rawFirstDay + 6) % 7; // shift so Monday=0
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
-  const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const days = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  const monthName = date.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+  const days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
   const cells: (number | null)[] = [
     ...Array(firstDay).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),

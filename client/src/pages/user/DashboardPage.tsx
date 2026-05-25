@@ -217,7 +217,7 @@ export default function DashboardPage() {
                 <Plus className="w-4 h-4" /> Add Widget
               </button>
               <button data-tour="customize" onClick={handleEnterEdit} className="btn-outline text-sm flex items-center gap-1.5">
-                <Pencil className="w-4 h-4" /> Customize
+                <Pencil className="w-4 h-4" /> Customise
               </button>
             </>
           )
@@ -270,7 +270,7 @@ export default function DashboardPage() {
           <div className="flex flex-col items-center justify-center h-64 gap-4">
             <div className="text-6xl">📊</div>
             <h3 className="font-heading font-semibold text-text-primary">Your board is empty</h3>
-            <p className="text-text-secondary text-sm">Add widgets to customize your dashboard</p>
+            <p className="text-text-secondary text-sm">Add widgets to customise your dashboard</p>
             <button onClick={() => setAddOpen(true)} className="btn-primary">
               <Plus className="w-4 h-4" /> Add Widget
             </button>

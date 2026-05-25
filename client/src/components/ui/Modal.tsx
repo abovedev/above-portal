@@ -44,9 +44,9 @@ export default function Modal({ open, onClose, title, children, className, size 
                   exit={{ opacity: 0, scale: 0.95, y: 8 }}
                   transition={{ duration: 0.15 }}
                 >
-                <div className={cn('bg-surface border border-border rounded-card shadow-card-hover', className)}>
+                <div className={cn('bg-surface border border-border rounded-card shadow-card-hover flex flex-col max-h-[calc(100dvh-2rem)]', className)}>
                   {title && (
-                    <div className="flex items-center justify-between p-4 border-b border-border">
+                    <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
                       <Dialog.Title className="font-heading font-semibold text-text-primary">
                         {title}
                       </Dialog.Title>
@@ -60,7 +60,7 @@ export default function Modal({ open, onClose, title, children, className, size 
                       </Dialog.Close>
                     </div>
                   )}
-                  <div className="p-4">{children}</div>
+                  <div className="p-4 overflow-y-auto">{children}</div>
                 </div>
                 </motion.div>
               </div>

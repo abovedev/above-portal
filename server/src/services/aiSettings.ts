@@ -122,7 +122,7 @@ export function canAccessDocument(
 }
 
 export function getEnabledAITools<T extends { name: string }>(settings: AssistantSettings, tools: T[]): T[] {
-  if (settings.documentAccessMode === 'NO_DOCUMENT_ACCESS') {
+  if (!canAccessDocument(settings, { source: 'approved_internal' })) {
     return tools.filter((tool) => !['search_drive', 'get_document'].includes(tool.name));
   }
   return tools;

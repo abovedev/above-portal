@@ -451,7 +451,7 @@ async function main() {
       userId,
       type: WidgetType.CLOCK,
       title: 'Clock',
-      settings: { timezone: 'America/New_York', format: '12h' },
+      settings: { timezone: 'Australia/Sydney', format: '12h' },
       positionX: 0,
       positionY: 0,
       width: 3,

@@ -24,7 +24,7 @@ function relativeTime(iso: string): string {
   if (diff < 60) return 'just now';
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString('en-AU', { month: 'short', day: 'numeric' });
 }
 
 function GoogleConnectPrompt({ onConnect }: { onConnect: () => void }) {

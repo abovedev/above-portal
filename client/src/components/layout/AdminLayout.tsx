@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AdminSidebar from './AdminSidebar';
 import HelpPanel from './HelpPanel';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 export default function AdminLayout() {
   return (
@@ -14,7 +15,9 @@ export default function AdminLayout() {
         transition={{ duration: 0.2 }}
       >
         <div className="flex-1 overflow-auto">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </motion.main>
       <HelpPanel />

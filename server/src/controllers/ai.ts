@@ -4,7 +4,7 @@ import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
 import { aiSearchDrive, aiGetDocument, aiListCalendarEvents, aiSearchGmail, aiListChatSpaces, aiGetChatMessages } from './google';
 import { aiGetAsanaTasks } from './asana';
-import { buildAssistantSystemPrompt, getAISettings, getEnabledAITools } from '../services/aiSettings';
+import { buildAssistantSystemPrompt, canAccessDocument, getAISettings, getEnabledAITools } from '../services/aiSettings';
 import prisma from '../prisma/client';
 import { pushNotification } from '../utils/notificationStream';
 
@@ -269,6 +269,44 @@ const TOOLS: Anthropic.Tool[] = [
       required: ['request_id', 'action'],
     },
   },
+  {
+    name: 'search_files',
+    description: "Search the B-roll file archive. Use natural language — e.g. 'Ford Ranger Tier 1 with Dog Box', 'Companion Package Indoor'. Returns matching files with Drive links and tags. Use when asked about footage, B-roll, clips, or files.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Natural language search query for footage (e.g. "Ford Ranger Tier 1 LED Lights Companion Package")' },
+        tag_filters: { type: 'string', description: 'Optional comma-separated tag values to filter by (e.g. "Ford Ranger,Companion,Dog Box")' },
+        name_valid_only: { type: 'boolean', description: 'Set true to only return correctly named files' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'get_missing_shots',
+    description: "Get the list of missing B-roll shots that the team needs to capture. Returns needed shots with priority, description, and any matching footage found.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', enum: ['NEEDED', 'IN_PROGRESS', 'CAPTURED', 'ARCHIVED'], description: 'Filter by status (default: NEEDED)' },
+      },
+    },
+  },
+  {
+    name: 'log_missing_shot',
+    description: "Log a new missing B-roll shot that needs to be captured. Use when a team member or admin reports a gap in footage.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        subject: { type: 'string', description: 'What needs to be captured (e.g. "Ford Ranger + Dog Box close-up")' },
+        description: { type: 'string', description: 'More detail about the shot needed' },
+        vehicle_make: { type: 'string', description: 'Vehicle make if applicable (e.g. "Ford Ranger")' },
+        package_type: { type: 'string', description: 'Package type if applicable (e.g. "Companion")' },
+        priority: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'], description: 'Priority level' },
+      },
+      required: ['subject'],
+    },
+  },
 ];
 
 interface ChatMessage {
@@ -333,7 +371,7 @@ export async function chat(req: AuthRequest, res: Response) {
 
           try {
             if (block.name === 'search_drive') {
-              if (aiSettings.documentAccessMode === 'NO_DOCUMENT_ACCESS') {
+              if (!canAccessDocument(aiSettings, { source: 'approved_internal' })) {
                 result = 'Document access is disabled by the admin.';
                 toolResults.push({
                   type: 'tool_result',
@@ -345,7 +383,7 @@ export async function chat(req: AuthRequest, res: Response) {
               const { query } = block.input as { query: string };
               result = await aiSearchDrive(userId, query);
             } else if (block.name === 'get_document') {
-              if (aiSettings.documentAccessMode === 'NO_DOCUMENT_ACCESS') {
+              if (!canAccessDocument(aiSettings, { source: 'approved_internal' })) {
                 result = 'Document access is disabled by the admin.';
                 toolResults.push({
                   type: 'tool_result',
@@ -406,6 +444,17 @@ export async function chat(req: AuthRequest, res: Response) {
                 };
                 result = await aiReviewGearRequest(userId, request_id, action, admin_note);
               }
+            } else if (block.name === 'search_files') {
+              const { query, tag_filters, name_valid_only } = block.input as {
+                query: string; tag_filters?: string; name_valid_only?: boolean;
+              };
+              result = await aiSearchFiles(query, tag_filters, name_valid_only);
+            } else if (block.name === 'get_missing_shots') {
+              const { status } = (block.input ?? {}) as { status?: string };
+              result = await aiGetMissingShots(status);
+            } else if (block.name === 'log_missing_shot') {
+              const input = block.input as { subject: string; description?: string; vehicle_make?: string; package_type?: string; priority?: string };
+              result = await aiLogMissingShot(userId, input);
             } else {
               result = 'Unknown tool.';
             }
@@ -629,22 +678,46 @@ async function aiReviewGearRequest(
 
   const gearItem = await prisma.gearItem.findUnique({ where: { id: gearRequest.gearItemId } });
   if (!gearItem) return 'Gear item not found.';
-  if (action === 'APPROVED' && gearItem.status !== 'AVAILABLE') {
-    return `"${gearItem.name}" is no longer available, so this request cannot be approved.`;
-  }
-
-  await prisma.gearRequest.update({
-    where: { id: requestId },
-    data: {
-      status: action,
-      adminNote: adminNote || null,
-      reviewedById: adminId,
-      reviewedAt: new Date(),
-    },
-  });
 
   if (action === 'APPROVED') {
-    await prisma.gearItem.update({ where: { id: gearItem.id }, data: { status: 'RESERVED' } });
+    const approval = await prisma.$transaction(async (tx) => {
+      const currentItem = await tx.gearItem.findUnique({ where: { id: gearItem.id } });
+      if (!currentItem || currentItem.status !== 'AVAILABLE') return false;
+
+      await tx.gearItem.update({ where: { id: gearItem.id }, data: { status: 'RESERVED' } });
+      await tx.gearRequest.update({
+        where: { id: requestId },
+        data: {
+          status: 'APPROVED',
+          adminNote: adminNote || null,
+          reviewedById: adminId,
+          reviewedAt: new Date(),
+        },
+      });
+      await tx.gearRequest.updateMany({
+        where: { gearItemId: gearItem.id, id: { not: requestId }, status: 'PENDING' },
+        data: {
+          status: 'DECLINED',
+          adminNote: 'Another request for this gear was approved.',
+          reviewedById: adminId,
+          reviewedAt: new Date(),
+        },
+      });
+
+      return true;
+    });
+
+    if (!approval) return `Cannot approve this request because ${gearItem.name} is no longer available.`;
+  } else {
+    await prisma.gearRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'DECLINED',
+        adminNote: adminNote || null,
+        reviewedById: adminId,
+        reviewedAt: new Date(),
+      },
+    });
   }
 
   const requester = await prisma.user.findUnique({
@@ -667,4 +740,74 @@ async function aiReviewGearRequest(
   pushNotification(notification);
 
   return `Done. ${requester?.firstName} ${requester?.lastName}'s request for "${gearItem.name}" has been ${action.toLowerCase()}. They've been notified.${adminNote ? ` Your note "${adminNote}" was included.` : ''}`;
+}
+
+// ─── File AI helpers ───────────────────────────────────────────────────────────
+
+async function aiSearchFiles(query: string, tagFilters?: string, nameValidOnly?: boolean): Promise<string> {
+  const tagValues = tagFilters ? tagFilters.split(',').map((t) => t.trim()).filter(Boolean) : [];
+
+  const files = await prisma.driveFile.findMany({
+    where: {
+      AND: [
+        nameValidOnly ? { nameValid: true } : {},
+        tagValues.length
+          ? { tags: { some: { tagValue: { value: { in: tagValues } } } } }
+          : {},
+        {
+          OR: [
+            { name: { contains: query, mode: 'insensitive' } },
+            { parsedSubject: { contains: query, mode: 'insensitive' } },
+            { parsedLocation: { contains: query, mode: 'insensitive' } },
+            { tags: { some: { tagValue: { value: { contains: query, mode: 'insensitive' } } } } },
+          ],
+        },
+      ],
+    },
+    take: 10,
+    orderBy: { modifiedAt: 'desc' },
+    include: {
+      tags: { include: { tagValue: { include: { category: true } } } },
+      folder: { select: { name: true } },
+    },
+  });
+
+  if (!files.length) return `No files found matching "${query}"${tagValues.length ? ` with tags: ${tagValues.join(', ')}` : ''}.`;
+
+  return files.map((f) => {
+    const tags = f.tags.map((t) => `${t.tagValue.category.name}: ${t.tagValue.value}`).join(' | ');
+    return `"${f.name}" — ${f.folder?.name ?? 'Unknown folder'}\nLink: ${f.webViewLink}\n${tags ? `Tags: ${tags}` : 'Untagged'}\nNaming: ${f.nameValid ? 'Valid' : 'Invalid'}`;
+  }).join('\n\n');
+}
+
+async function aiGetMissingShots(status?: string): Promise<string> {
+  const shots = await prisma.missingShot.findMany({
+    where: status ? { status: status as 'NEEDED' | 'IN_PROGRESS' | 'CAPTURED' | 'ARCHIVED' } : { status: 'NEEDED' },
+    orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+    take: 15,
+    include: { requestedBy: { select: { firstName: true, lastName: true } } },
+  });
+
+  if (!shots.length) return 'No missing shots logged with that status.';
+  return shots.map((s) => {
+    const meta = [s.vehicleMake, s.packageType, s.category, s.feature].filter(Boolean).join(', ');
+    return `[${s.priority}] ${s.subject}${meta ? ` (${meta})` : ''} — Requested by ${s.requestedBy.firstName} ${s.requestedBy.lastName}${s.description ? `\nDetails: ${s.description}` : ''}`;
+  }).join('\n\n');
+}
+
+async function aiLogMissingShot(
+  userId: string,
+  input: { subject: string; description?: string; vehicle_make?: string; package_type?: string; priority?: string },
+): Promise<string> {
+  const shot = await prisma.missingShot.create({
+    data: {
+      subject: input.subject,
+      description: input.description,
+      vehicleMake: input.vehicle_make,
+      packageType: input.package_type,
+      priority: (input.priority ?? 'MEDIUM') as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
+      requestedById: userId,
+    },
+  });
+  return `Missing shot logged: "${shot.subject}" (${shot.priority} priority). The team can view it in the File Management section.`;
 }

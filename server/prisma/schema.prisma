@@ -77,6 +77,13 @@ enum GearRequestStatus {
   COLLECTED
 }
 
+enum MissingShotStatus {
+  NEEDED
+  IN_PROGRESS
+  CAPTURED
+  ARCHIVED
+}
+
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
@@ -107,11 +114,15 @@ model User {
   comments      AnnouncementComment[]
   reactions     AnnouncementReaction[]
   mentions      AnnouncementMention[]
-  updatedAISettings    AiSettings[]     @relation("AISettingsUpdatedBy")
-  gearRequests         GearRequest[]    @relation("GearRequester")
-  gearReviewedRequests GearRequest[]    @relation("GearReviewer")
-  gearAssignmentsUser  GearAssignment[] @relation("GearAssignee")
-  gearAssignmentsAdmin GearAssignment[] @relation("GearAssigner")
+  updatedAISettings    AiSettings[]      @relation("AISettingsUpdatedBy")
+  gearRequests         GearRequest[]     @relation("GearRequester")
+  gearReviewedRequests GearRequest[]     @relation("GearReviewer")
+  gearAssignmentsUser  GearAssignment[]  @relation("GearAssignee")
+  gearAssignmentsAdmin GearAssignment[]  @relation("GearAssigner")
+  driveFolders         DriveFolder[]     @relation("FolderAddedBy")
+  fileTags             FileTag[]         @relation("FileTaggedBy")
+  fileTagPermission    FileTagPermission? @relation("FileTagPermission")
+  missingShots         MissingShot[]     @relation("MissingShotRequester")
 }
 
 model RefreshToken {
@@ -367,4 +378,108 @@ model GearAssignment {
   returnedAt   DateTime?
   notes        String?
   createdAt    DateTime  @default(now())
+}
+
+// ─── File Management System ────────────────────────────────────────────────────
+
+model DriveFolder {
+  id         String      @id @default(cuid())
+  driveId    String      @unique
+  name       String
+  url        String?
+  driveType  String      @default("personal")
+  recursive  Boolean     @default(false)
+  isWatched  Boolean     @default(true)
+  addedById  String
+  addedBy    User        @relation("FolderAddedBy", fields: [addedById], references: [id])
+  lastSyncAt DateTime?
+  fileCount  Int         @default(0)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  files      DriveFile[]
+}
+
+model DriveFile {
+  id             String       @id @default(cuid())
+  driveId        String       @unique
+  name           String
+  mimeType       String
+  size           BigInt?
+  webViewLink    String
+  thumbnailLink  String?
+  folderId       String?
+  folder         DriveFolder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  subfolderPath  String?
+  nameValid      Boolean      @default(false)
+  parsedDate     String?
+  parsedSubject  String?
+  parsedLocation String?
+  nameSuggestion String?
+  modifiedAt     DateTime?
+  syncedAt       DateTime     @default(now())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  tags           FileTag[]
+  resolvedShots  MissingShot[]
+}
+
+model TagCategory {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  slug      String     @unique
+  color     String     @default("#6366f1")
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+  values    TagValue[]
+}
+
+model TagValue {
+  id         String      @id @default(cuid())
+  categoryId String
+  category   TagCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  value      String
+  order      Int         @default(0)
+  createdAt  DateTime    @default(now())
+  files      FileTag[]
+  @@unique([categoryId, value])
+}
+
+model FileTag {
+  id         String    @id @default(cuid())
+  fileId     String
+  file       DriveFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  tagValueId String
+  tagValue   TagValue  @relation(fields: [tagValueId], references: [id], onDelete: Cascade)
+  taggedById String
+  taggedBy   User      @relation("FileTaggedBy", fields: [taggedById], references: [id])
+  createdAt  DateTime  @default(now())
+  @@unique([fileId, tagValueId])
+}
+
+model FileTagPermission {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation("FileTagPermission", fields: [userId], references: [id], onDelete: Cascade)
+  canTag    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model MissingShot {
+  id              String            @id @default(cuid())
+  subject         String
+  description     String?
+  vehicleMake     String?
+  packageType     String?
+  category        String?
+  feature         String?
+  priority        Priority          @default(MEDIUM)
+  status          MissingShotStatus @default(NEEDED)
+  requestedById   String
+  requestedBy     User              @relation("MissingShotRequester", fields: [requestedById], references: [id])
+  targetShootDate DateTime?
+  resolvedFileId  String?
+  resolvedFile    DriveFile?        @relation(fields: [resolvedFileId], references: [id], onDelete: SetNull)
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 }
